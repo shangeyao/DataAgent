@@ -253,19 +253,41 @@ func condition(n M, up []M, params M) bool {
 		for _, r := range up {
 			vars["n_"+str(r["node_id"])] = num(obj(r["output"])["row_count"])
 		}
-		return evalCondition(str(cfg["expression"]), vars)
+		expr := str(cfg["expression"])
+		// Support {{...}} built-in placeholders in edge expressions (e.g. an
+		// IF-ELSE node's branch). Each placeholder becomes a typed variable in
+		// vars so string comparisons like == "true" keep their type.
+		idx := 0
+		expr = replaceWithVars(expr, func(path string) string {
+			for _, r := range up {
+				scope := M{"tasks": builtinTasksScope(M{str(def(r, "node_id", "")): r})}
+				if v := firstRowValue(scope, path); v != nil {
+					name := "__p" + str(idx)
+					idx++
+					vars[name] = v
+					return name
+				}
+			}
+			return "nil"
+		})
+		return evalCondition(expr, vars)
 	default:
 		fail(422, "未知运行条件")
 	}
 	return false
 }
-func (a *App) executeNode(ws string, n M, params, outputs M, depth int) (out M) {
+func (a *App) executeNode(ws string, f, run M, n M, params, outputs M, depth int) (out M) {
+	return a.executeNodeLoop(ws, f, run, n, params, outputs, depth, nil)
+}
+
+// executeNodeLoop is the shared node executor. loopItem carries the current
+// ForEach iteration context (index / value / item) and is nil outside a loop.
+func (a *App) executeNodeLoop(ws string, f, run M, n M, params, outputs M, depth int, loopItem M) (out M) {
 	defer func() {
 		if e := recover(); e != nil {
 			out = M{"status": "failed", "error": fmt.Sprint(e)}
 		}
 	}()
-	globalParams := params
 	local := M{}
 	for k, v := range params {
 		local[k] = v
@@ -274,7 +296,17 @@ func (a *App) executeNode(ws string, n M, params, outputs M, depth int) (out M) 
 		local[k] = v
 	}
 	params = local
-	cfg := obj(renderValue(obj(n["config"]), M{"workflow": globalParams, "params": params, "nodes": outputs}))
+	start := time.Now().UTC()
+	if run != nil {
+		if t, e := time.Parse(time.RFC3339, str(def(run, "started_at", ""))); e == nil {
+			start = t
+		}
+	}
+	scope := renderScope(f, run, params, outputs, start)
+	if loopItem != nil {
+		scope["loop"] = loopItem
+	}
+	cfg := obj(renderValue(obj(n["config"]), scope))
 	switch str(n["type"]) {
 	case "sql":
 		out = a.query(ws, str(def(cfg, "sql", n["sql"])), int(num(def(cfg, "limit", 200))))
@@ -377,6 +409,86 @@ func (a *App) executeNode(ws string, n M, params, outputs M, depth int) (out M) 
 		if resp.StatusCode >= 400 {
 			out["status"] = "failed"
 		}
+	case "ifelse":
+		// IF-ELSE is a first-class branch node. It evaluates an expression
+		// against the built-in scope and exposes the selected branch to
+		// downstream nodes via `condition=expression` on the outgoing edges,
+		// e.g. `{{tasks.<id>.output.branch}} == "true"`.
+		expr := str(def(cfg, "expression", "true"))
+		matched := evalBranchExpression(expr, scope)
+		branch := "false"
+		if matched {
+			branch = "true"
+		}
+		out = M{"branch": branch, "matched": matched, "expression": expr}
+	case "foreach":
+		// ForEach iterates a list and runs an inline sub-graph for each item.
+		// The current item is exposed as {{loop.item}} / {{loop.index}} and,
+		// when item_param is set, also as a regular param with that name.
+		if depth >= 5 {
+			fail(400, "ForEach 嵌套最多 5 层")
+		}
+		items := loopValues(cfg["items"], scope)
+		itemParam := firstNonempty(str(cfg["item_param"]), "item")
+		subNodes := arr(cfg["nodes"])
+		subEdges := arr(cfg["edges"])
+		if len(subNodes) == 0 {
+			fail(422, "ForEach 必须配置 nodes")
+		}
+		order := topo(subNodes, subEdges)
+		iterations := []M{}
+		status := "success"
+		for i, raw := range items {
+			item := M{"index": i, "value": raw, "item": raw}
+			iterScope := M{}
+			for k, v := range scope {
+				iterScope[k] = v
+			}
+			iterScope["loop"] = item
+			iterParams := M{}
+			for k, v := range params {
+				iterParams[k] = v
+			}
+			iterParams[itemParam] = raw
+			iterOutputs := M{}
+			iterResults := []M{}
+			for _, sn := range order {
+				key := str(obj(sn)["id"])
+				sobj := obj(sn)
+				up := []M{}
+				for _, e := range subEdges {
+					pair := arr(e)
+					if str(pair[1]) == key {
+						up = append(up, obj(iterOutputs[str(pair[0])]))
+					}
+				}
+				if !condition(sobj, up, iterParams) {
+					continue
+				}
+				r := a.executeNodeLoop(ws, f, run, sobj, iterParams, iterOutputs, depth+1, item)
+				r["node_id"] = key
+				iterOutputs[key] = r
+				iterResults = append(iterResults, r)
+				if r["status"] == "failed" {
+					status = "failed"
+					break
+				}
+				if r["status"] == "waiting" {
+					status = "waiting"
+					break
+				}
+			}
+			iterations = append(iterations, M{"index": i, "value": raw, "nodes": iterResults, "status": status})
+			if status != "success" {
+				break
+			}
+		}
+		out = M{"count": len(items), "iterations": iterations, "status": status, "first_row": M{}}
+		if len(iterations) > 0 {
+			if nodes := arr(obj(iterations[0])["nodes"]); len(nodes) > 0 {
+				out["first_row"] = obj(nodes[0])
+			}
+		}
 	default:
 		fail(422, "未知节点类型")
 	}
@@ -450,7 +562,7 @@ func (a *App) runFlowState(ws string, f M, overrides M, trigger string, depth in
 			}
 			var out M
 			for attempt := 0; attempt <= retries; attempt++ {
-				out = a.executeNode(ws, n, params, outputs, depth)
+				out = a.executeNode(ws, f, run, n, params, outputs, depth)
 				out["attempts"] = attempt + 1
 				if out["status"] != "failed" {
 					break

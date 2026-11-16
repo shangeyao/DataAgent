@@ -373,7 +373,11 @@ func (a *App) agentFinish(c *request, conv, content string, state M) M {
 	out := checkOutput(content)
 	content = str(out["text"])
 	a.markPlan(conv, "__final__", "done", "")
-	meta := M{"engine": def(state, "engine", "goframe"), "trace": arr(state["trace"]), "artifacts": arr(state["artifacts"]), "usage": obj(state["usage"]), "plan": a.plan(conv)}
+	artifacts := arr(state["artifacts"])
+	if row := a.row("SELECT chat_mode FROM conversations WHERE id=?", conv); row != nil && str(row["chat_mode"]) == "ask" {
+		artifacts = filterAskArtifacts(artifacts)
+	}
+	meta := M{"engine": def(state, "engine", "goframe"), "trace": arr(state["trace"]), "artifacts": artifacts, "usage": obj(state["usage"]), "plan": a.plan(conv)}
 	a.insert("messages", M{"id": id(), "conversation_id": conv, "role": "assistant", "content": content, "meta": meta, "created_at": now()})
 	a.update("conversations", conv, M{"updated_at": now()})
 	return M{"status": "ok", "content": content, "meta": meta, "approval": nil}
@@ -479,13 +483,29 @@ func (a *App) agent(c *request, conv M, question string) M {
 	if checkInput(question)["action"] == "block" {
 		return a.agentFinish(c, key, "输入包含提示注入或越权指令，已拦截。", M{"engine": "guardrails"})
 	}
+	// Ask mode: refuse mutating requests explicitly and prompt a mode switch,
+	// regardless of whether an LLM is configured (official 1835/140860).
+	ask := isAskMode(conv)
+	if ask && detectWriteIntent(question) {
+		return a.agentFinish(c, key, askRefusalMessage, M{"engine": "ask-guard", "mode_hint": "agent"})
+	}
 	if a.llm("api_key", "") == "" {
 		content, out := a.heuristic(c, key, question)
-		return a.agentFinish(c, key, content, M{"engine": "heuristic", "artifacts": []M{artifact(out, "分析结果")}})
+		artifacts := []M{artifact(out, "分析结果")}
+		if ask {
+			artifacts = []M{}
+			for _, v := range filterAskArtifacts(toAnySlice(artifacts)) {
+				artifacts = append(artifacts, obj(v))
+			}
+		}
+		return a.agentFinish(c, key, content, M{"engine": "heuristic", "artifacts": artifacts})
 	}
 	profile := a.agentProfile(c, conv)
 	a.setPlan(key, newPlan(str(profile["mode"])))
 	system := a.agentSystem(c, question, profile)
+	if ask {
+		system = askModePrompt + "\n" + system
+	}
 	history := a.rows("SELECT role,content FROM (SELECT * FROM messages WHERE conversation_id=? ORDER BY rowid DESC LIMIT 20) ORDER BY created_at", key)
 	messages := []any{M{"role": "system", "content": system}}
 	for _, r := range history {

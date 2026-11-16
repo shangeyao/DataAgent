@@ -279,14 +279,19 @@ async function openTask(taskId) {
   const body = el('div');
   body.innerHTML = `<div class="col" style="gap:14px">
     <div class="info-strip"><span class="tag ${task.enabled ? 'green' : ''}">${task.enabled ? '已启用' : '已停用'}</span>
+      <span class="tag">${({ daily: '每天', interval: '按间隔', once: '单次' })[task.frequency] || '每天'}</span>
       <span class="mono tiny">${esc(task.cron || '')}</span>
+      ${task.model ? `<span class="tag">${esc(task.model)}</span>` : ''}
       <span class="spacer"></span><span class="dim tiny">最近运行 ${task.last_run ? fmt.ago(task.last_run) : '从未'}</span></div>
+    ${task.valid_from || task.valid_until ? `<div class="tiny dim">生效区间：${esc(task.valid_from || '不限')} ~ ${esc(task.valid_until || '不限')}</div>` : ''}
+    ${task.skills && task.skills !== '[]' ? `<div class="tiny dim">Skills：${esc(task.skills)}</div>` : ''}
     <div><div class="tiny dim" style="margin-bottom:4px">提示词</div><div class="tiny">${esc(task.prompt)}</div></div>
     <div><div class="tiny dim" style="margin-bottom:6px">运行记录</div>
       ${runs.length ? `<div class="col" style="gap:6px">${runs.map((r) => `<div class="list-item">
-        <div class="meta"><strong>${r.status === 'success' ? '成功' : r.status === 'failed' ? '失败' : r.status === 'pending' ? '待确认' : '运行中'}</strong>
-          <span>${fmt.dt(r.started_at)}${r.error ? ' · ' + esc(r.error) : ''}</span></div>
-        ${r.conversation_id ? `<a class="btn-link" href="#/buddy/${r.conversation_id}">查看会话</a>` : ''}
+        <div class="meta"><strong>${r.status === 'success' ? '成功' : r.status === 'failed' ? '失败' : r.status === 'pending' ? '待确认' : '运行中'}${!r.is_read ? ' <span class="dot-new" title="未读"></span>' : ''}</strong>
+          <span>${fmt.dt(r.started_at)}${r.artifact_count ? ' · ' + r.artifact_count + ' 个产物' : ''}${r.error ? ' · ' + esc(r.error) : ''}</span></div>
+        <span style="display:flex;gap:8px">${r.conversation_id ? `<a class="btn-link" href="#/buddy/${r.conversation_id}">查看会话</a>` : ''}
+        ${!r.is_read ? `<a class="btn-link" data-read="${r.id}" href="javascript:void(0)">标记已读</a>` : ''}</span>
       </div>`).join('')}</div>` : '<div class="tiny dim">还没有运行记录</div>'}
     </div>
     ${runs[0] && runs[0].summary ? `<div><div class="tiny dim" style="margin-bottom:4px">最近结果</div>
@@ -300,6 +305,15 @@ async function openTask(taskId) {
     onMount: (root) => {
       root.querySelectorAll('a[href^="#/buddy/"]').forEach((a) =>
         a.addEventListener('click', () => document.querySelector('.modal-mask')?.remove())
+      );
+      root.querySelectorAll('[data-read]').forEach((a) =>
+        a.addEventListener('click', async () => {
+          try {
+            await api.post(`/buddy-runs/${a.dataset.read}/read`, {});
+            toast('已标记为已读', 'ok');
+            await openTask(taskId);
+          } catch (e) { toast(e.message, 'err'); }
+        })
       );
     },
     actions: [

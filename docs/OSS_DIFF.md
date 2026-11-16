@@ -7,6 +7,8 @@
 > 2026-11-13 追加轮次：§6.9 剩余 8 项中纯本地可做的 6 项已全部落地（表结构演进、推理鉴权限流、看板自由布局、语义检索、行级/表级权限、资源配额），P2 累计 12 / 14；余下 2 项需外部系统。详见 [HANDOFF.md](../HANDOFF.md)「追加轮次 · 2026-11-13」。
 >
 > **2026-11-13 补充比对**：以官方[《产品功能》](https://cloud.tencent.com/document/product/1835/135579)页为入口，横向扫描了同目录 40+ 个子页（含 2026-11 更新的[基础能力](https://cloud.tencent.com/document/product/1835/140860)、[场景功能对比](https://cloud.tencent.com/document/product/1835/140844)），逐条对本仓库代码复核，新增 **§6.11**，含 20 个小节、18 条新缺口与 2 处 §5 口径更正。最重要三条：**①工作流无 ForEach 循环节点；②系统内置参数完全缺失；③Ask 模式只做到"不给工具"而无显式拒绝**。另确认 `AI Gateway`、`推理监控/日志/事件`、`数据复核`、`探索发现` 四个菜单级模块不存在。
+>
+> **2026-11-16 闭环**：上述缺口中纯本地可做的 6 项（ForEach / 内置参数 / IF-ELSE / Ask 拒绝语义 / Buddy 定时任务字段 / 波动率规则）已全部实现，见 **§6.12**；其余 12 项保持原判定。全量构建、vet、测试（含 HTTP）与前端语法检查均通过。
 
 > 目标：**能力保留，商业限制清空。**
 > 本文逐条列出原产品的商业约束、云依赖与限额，以及本开源版的替代实现。
@@ -562,14 +564,14 @@ if state["chat_mode"] == "ask" { tools = nil }
 
 #### 6.11.20 本轮新增缺口汇总（按建议修复顺序）
 
-| # | 缺口 | 影响 | 本地可实现性 |
-| --- | --- | --- | --- |
-| 1 | **ForEach 循环节点** | 批量处理场景无法表达 | 高（循环 + 子图执行，`runFlow` 已有递归能力） |
-| 2 | **系统内置参数** | 按运行时间动态取数完全缺失 | 高（纯渲染层，`renderValue` 扩展作用域即可） |
-| 3 | **IF-ELSE 一等工作流节点** | 分支目前只能用边条件近似 | 高 |
-| 4 | **Ask 模式显式拒绝 + 只读产物白名单** | 安全语义不完整 | 高（加一层拦截与话术） |
-| 5 | **Buddy 定时任务的 Skills/模型/生效区间/测试运行** | 与官方任务台差距明显 | 高（加字段 + 一个 POST 接口） |
-| 6 | **波动率质量规则** | 缺一类规则形态（官方 6 种里唯一缺的） | 高（复用 `drift.go` 的基线算法，改为字段级） |
+| # | 缺口 | 影响 | 本地可实现性 | 状态 |
+| --- | --- | --- | --- | --- |
+| 1 | **ForEach 循环节点** | 批量处理场景无法表达 | 高（循环 + 子图执行，`runFlow` 已有递归能力） | ✅ 已闭环（2026-11-16） |
+| 2 | **系统内置参数** | 按运行时间动态取数完全缺失 | 高（纯渲染层，`renderValue` 扩展作用域即可） | ✅ 已闭环（2026-11-16） |
+| 3 | **IF-ELSE 一等工作流节点** | 分支目前只能用边条件近似 | 高 | ✅ 已闭环（2026-11-16） |
+| 4 | **Ask 模式显式拒绝 + 只读产物白名单** | 安全语义不完整 | 高（加一层拦截与话术） | ✅ 已闭环（2026-11-16） |
+| 5 | **Buddy 定时任务的 Skills/模型/生效区间/测试运行** | 与官方任务台差距明显 | 高（加字段 + 一个 POST 接口） | ✅ 已闭环（2026-11-16） |
+| 6 | **波动率质量规则** | 缺一类规则形态（官方 6 种里唯一缺的） | 高（复用 `drift.go` 的基线算法，改为字段级） | ✅ 已闭环（2026-11-16） |
 | 7 | **产物文件化 + diff** | 产物无法长期复用 | 中（需落文件 + Studio 联动） |
 | 8 | **@ 引用结构化传参** | 引用只是字符串，无权限校验 | 中 |
 | 9 | **统一检索（探索发现）** | 无跨类型入口 | 中（复用 `semanticSearch` 扩类型） |
@@ -584,6 +586,37 @@ if state["chat_mode"] == "ask" { tools = nil }
 | 18 | **推理监控/日志/事件** | 需真实运行时 | 低（保留不做） |
 
 > 其中 1–6 属于「结构完整但有明显洞」，建议优先；7–14 属于「有替代路径，体验差距」；15–18 属于「外部依赖或非目标」。
+>
+> **2026-11-16 更新**：缺口 1–6 已全部闭环实现，详见 **§6.12**。7–18 保持原状。
+
+### 6.12 补充比对缺口闭环实现（2026-11-16）
+
+按 §6.11.20 的优先级，把纯本地可做的 6 项缺口全部实现为真实代码，并在 `workflow_extensions_test.go` 增加 7 个专项测试。以下逐条对应 §6.11 的小节：
+
+| §6.11 小节 | 缺口 | 实现 | 关键文件 |
+| --- | --- | --- | --- |
+| 6.11.1 / 6.11.3 | 系统内置参数 | `renderScope()` 构造官方作用域：`workflow.id/name/run_id/repair_count/start_time.*/trigger.time.*`、`tasks.<id>.output.*`（含 `first_row.<col>`）、`params.*`。用户的自定义参数仍可通过 `workflow.<param>` 兼容访问；`{{expr}}` 边条件支持内置占位符并以具名变量注入求值，字符串比较按类型处理 | `workflow_builtins.go`、`expression.go`、`workflow.go` |
+| 6.11.1 | IF-ELSE 一等工作流节点 | `executeNodeLoop()` 新增 `ifelse` 类型，按表达式求值输出 `branch`（true/false）与 `matched`；下游节点用 `condition=expression` + `{{tasks.<id>.output.branch}} == "true"` 分流 | `workflow.go`、`expression.go` |
+| 6.11.1 | ForEach 循环节点 | 新增 `foreach` 类型，`items` 支持字面数组 / `{{params.x}}` 占位符 / 逗号串；对每个元素执行内联子图（含 `nodes`/`edges`/边条件），暴露 `{{loop.item}}`、`{{loop.index}}` 与可配 `item_param`；嵌套上限 5 层，失败/等待中断 | `workflow.go`、`workflow_builtins.go` |
+| 6.11.8 | Ask 模式显式拒绝 + 只读产物 | ①`agent()` 入口检测写意图（区分"如何创建表"类只读问句），命中则返回 `askRefusalMessage` 引导切换 Agent；②system prompt 注入只读约束；③`agentFinish()` 按白名单过滤产物，仅保留 query/schema/knowledge 等只读类型 | `ask_mode.go`、`agent.go` |
+| 6.11.7 | Buddy 定时任务字段 | `buddy_tasks` 增加 `frequency`（daily/interval/once）、`time_of_day`、`interval_minutes`、`run_at`、`valid_from/until`、`skills`、`model`；`buddy_task_runs` 增加 `artifact_count`、`is_read`。按频率派生 cron、once 模式到期自动停用、生效区间过滤；新增 `POST /buddy-runs/{id}/read`、`GET /buddy-tasks/meta`；前端任务面板展示这些字段并支持"标记已读" | `schema.sql`、`migrations.json`、`operations.go`、`resources.go`、`buddy.js`、`styles.css` |
+| 6.11.6 | 波动率质量规则 | `rule_types` 增 `volatility`（共 8 种）。首次运行自动建立基线并通过；后续按当前列均值与基线均值的相对偏差判定，`max_deviation_rate` 默认 0.3，`update_baseline` 可滚动更新。复用 `profile_baselines` 表，无新增表 | `quality.go`、`metadata.json` |
+
+**验证**（本机 Windows x64，CGO 使用 `D:\tools\winlibs\mingw64\bin\gcc.exe`）：
+
+- `CGO_ENABLED=1 go build ./...` ✅
+- `CGO_ENABLED=1 go vet ./...` ✅
+- `CGO_ENABLED=1 go test ./... -count=1` ✅（62s，全绿）
+- `ODB_HTTP_TEST=1 go test ./internal/platform/ -run TestHTTP -count=1` ✅
+- `node --check web/js/*.js` ✅
+
+**诚实边界**：
+
+- 内置参数是**确定性本地展开**，非官方云端调度服务；`trigger.time` 在手动运行时回退到运行开始时间，仅当 flow 提供 `trigger_time`/`run_at` 时才使用计划时间。
+- ForEach 是**进程内串行子图**，无并行度与分布式执行；子图节点复用主流程的权限、SQL 护栏与审计。`first_row` 仅取首个迭代首个节点输出。
+- IF-ELSE 靠**下游边条件**分流（而非节点多出口端口），语义等价但拓扑表达不同。
+- Ask 模式的写意图检测是**启发式正则**，覆盖常见中英文命令式请求；它不替代模型侧的语义理解，LLM 路径仍以 system prompt 约束为主、工具清空为辅。
+- 波动率基线为**列均值相对偏差**，未实现官方可能的同环比/季节性模型；无历史基线时首次运行只建基线、不判定异常。
 
 ---
 

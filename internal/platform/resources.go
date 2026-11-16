@@ -115,6 +115,8 @@ func (a *App) resourceRoutes() []route {
 			}
 			if d.Table == "buddy_tasks" {
 				m["user_id"] = c.User["id"]
+				// Derive cron from the official frequency model (daily/interval/once).
+				m["cron"] = buddyTaskCron(m)
 			}
 			a.validateResource(d, m, c)
 			a.checkQuota(c.WS, d.Table) // P2-12：新建前校验工作空间配额

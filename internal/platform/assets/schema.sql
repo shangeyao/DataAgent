@@ -296,7 +296,7 @@ CREATE TABLE IF NOT EXISTS buddy_tasks (
     enabled INTEGER DEFAULT 1,
     last_run TEXT,
     created_at TEXT
-);
+, "frequency" TEXT DEFAULT 'daily', "time_of_day" TEXT DEFAULT '03:00', "interval_minutes" INTEGER DEFAULT 60, "run_at" TEXT DEFAULT '', "valid_from" TEXT DEFAULT '', "valid_until" TEXT DEFAULT '', "skills" TEXT DEFAULT '[]', "model" TEXT DEFAULT '');
 CREATE TABLE IF NOT EXISTS analysis_spaces (
     id TEXT PRIMARY KEY,
     workspace_id TEXT,
@@ -317,7 +317,7 @@ CREATE TABLE IF NOT EXISTS buddy_task_runs (
     error TEXT DEFAULT '',
     started_at TEXT,
     finished_at TEXT
-);
+, "artifact_count" INTEGER DEFAULT 0, "is_read" INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS volumes (
     id TEXT PRIMARY KEY,
     workspace_id TEXT,

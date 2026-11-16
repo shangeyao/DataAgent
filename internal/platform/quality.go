@@ -47,7 +47,7 @@ func (a *App) newRule(ws string, m M) M {
 func (a *App) prepareRule(ws string, m M) M {
 	t := a.resolve(ws, refOf(m))
 	typ := ruleType(str(def(m, "rule_type", m["type"])))
-	if !strings.Contains("|not_null|unique|range|enum|regex|custom_sql|freshness|", "|"+typ+"|") {
+	if !strings.Contains("|not_null|unique|range|enum|regex|custom_sql|freshness|volatility|", "|"+typ+"|") {
 		fail(422, "未知规则类型")
 	}
 	col := colOf(m)
@@ -230,6 +230,51 @@ func (a *App) runRule(ws string, r M) (out M) {
 	case "freshness":
 		q = "SELECT epoch(current_timestamp-max(CAST(" + col + " AS TIMESTAMP)))/3600 AS value FROM " + table
 		threshold = num(def(cfg, "max_hours", 24))
+	case "volatility":
+		// Compare the current column mean against a captured profiling baseline.
+		// A relative deviation beyond max_deviation_rate fails the rule. This is
+		// the field-level equivalent of the official 波动率 rule shape (doc
+		// 1835/135579); table-level drift metrics in drift.go are not a substitute.
+		threshold = num(def(cfg, "max_deviation_rate", 0.3))
+		rr := rows(a.Lake, "SELECT avg(CAST("+col+" AS DOUBLE)) AS value FROM "+table)
+		current := float64(0)
+		if len(rr) > 0 {
+			for _, v := range rr[0] {
+				current = num(v)
+				break
+			}
+		}
+		baseCol := str(r["column_name"]) // unquoted key for the baseline store
+		baselineMean, found := a.baselineMean(ws, refOf(r), baseCol)
+		if !found {
+			// First run: capture the current value as the implicit baseline and
+			// pass, so a volatility rule can be created without a prior profile.
+			a.saveVolatilityBaseline(ws, refOf(r), baseCol, current)
+			out["value"] = 0
+			out["status"] = "pass"
+			out["detail"] = fmt.Sprintf("已建立波动率基线 %g（首次运行，无历史基线）", current)
+			out["severity"] = def(cfg, "severity", "warning")
+			out["blocking"] = boolOf(cfg["blocking"])
+			return
+		}
+		deviation := float64(0)
+		if math.Abs(baselineMean) > 1e-9 {
+			deviation = math.Abs(current-baselineMean) / math.Abs(baselineMean)
+		} else if math.Abs(current) > 1e-9 {
+			deviation = 1
+		}
+		out["value"] = deviation
+		out["status"] = "pass"
+		if deviation > threshold {
+			out["status"] = "fail"
+		}
+		if boolOf(cfg["update_baseline"]) {
+			a.saveVolatilityBaseline(ws, refOf(r), baseCol, current)
+		}
+		out["detail"] = fmt.Sprintf("当前均值 %g，基线 %g，相对波动 %g，阈值 %g", current, baselineMean, deviation, threshold)
+		out["severity"] = def(cfg, "severity", "warning")
+		out["blocking"] = boolOf(cfg["blocking"])
+		return
 	}
 	rr := rows(a.Lake, q)
 	value := float64(0)
@@ -435,6 +480,30 @@ func (a *App) profile(ws string, m M) M {
 	}
 	return out
 }
+
+// baselineMean reads the most recent captured mean for a column from the
+// profiling baseline history. Returns (mean, true) when a usable baseline exists.
+func (a *App) baselineMean(ws, tableRef, col string) (float64, bool) {
+	rows := a.rows("SELECT stats FROM profile_baselines WHERE workspace_id=? AND table_ref=? ORDER BY captured_at DESC", ws, tableRef)
+	for _, raw := range rows {
+		stats := obj(obj(raw)["stats"])
+		columns := obj(obj(stats["columns"]))
+		colStats := obj(columns[col])
+		if colStats["avg"] != nil {
+			return num(colStats["avg"]), true
+		}
+	}
+	return 0, false
+}
+
+// saveVolatilityBaseline records the current mean as a new baseline snapshot
+// for subsequent volatility comparisons. It reuses the profiling baseline
+// table so no new schema is required.
+func (a *App) saveVolatilityBaseline(ws, tableRef, col string, mean float64) {
+	stats := M{"columns": M{col: M{"avg": mean}}}
+	a.insert("profile_baselines", M{"id": id(), "workspace_id": ws, "table_ref": tableRef, "mode": "volatility", "column_name": col, "stats": stats, "captured_at": now()})
+}
+
 func (a *App) baseline(ws string, p M) M {
 	stats := M{}
 	for k, v := range p {

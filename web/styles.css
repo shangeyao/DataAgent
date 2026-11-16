@@ -216,6 +216,7 @@ button { font-family: inherit; font-size: inherit; }
 .btn-link { color: var(--brand); cursor: pointer; font-size: 13px; background: none; border: none; padding: 0; }
 .btn-link:hover { color: var(--brand-hover); }
 .btn-link.danger { color: var(--error); }
+.dot-new { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--brand); vertical-align: middle; margin-left: 4px; }
 
 /* ------------------------------------------------------------------ 表单 */
 input, textarea, select {

@@ -1,6 +1,56 @@
-# 交接记录 · 2026-11-13
+# 交接记录 · 2026-11-16
 
-## 本轮目标
+> 最新轮次：**§6.11 补充比对缺口闭环**（本文件末尾「闭环轮次 · 2026-11-16」）。此前 2026-11-12 / 11-13 的记录保留在下方，作为历史审计轨迹。
+
+---
+
+## 闭环轮次 · 2026-11-16（§6.11 缺口 1–6 全部实现）
+
+接 [docs/OSS_DIFF.md](docs/OSS_DIFF.md) §6.11.20 的优先级，把「纯本地可实现」的 6 项缺口真正落地为代码（不再是文档标注）。对应 §6.12。
+
+### 实现清单（6 / 6）
+
+| # | 能力 | 实现要点 | 新增/改动文件 |
+| --- | --- | --- | --- |
+| 1 | 系统内置参数 | `renderScope()` 构造 `workflow.id/name/run_id/repair_count/start_time.*/trigger.time.*` + `tasks.<id>.output.*`（含 `first_row.<col>`）；自定义参数仍兼容 `workflow.<param>`；边条件 `{{}}` 占位符以具名变量注入求值，支持字符串比较 | `workflow_builtins.go`（新）、`workflow.go`、`expression.go` |
+| 2 | IF-ELSE 节点 | `executeNodeLoop()` 新增 `ifelse`，输出 `branch`/`matched`；下游用边条件 `{{tasks.<id>.output.branch}} == "true"` 分流 | `workflow.go`、`expression.go` |
+| 3 | ForEach 节点 | 新增 `foreach`，`items` 支持数组/占位符/逗号串；内联子图执行（`nodes`/`edges`/边条件），暴露 `{{loop.item}}`/`{{loop.index}}` 与 `item_param`；上限 5 层 | `workflow.go`、`workflow_builtins.go` |
+| 4 | Ask 模式 | 入口写意图检测（区分只读问句）+ 拒绝话术引导切 Agent；system prompt 注入只读约束；`agentFinish()` 产物白名单过滤 | `ask_mode.go`（新）、`agent.go` |
+| 5 | Buddy 定时任务字段 | `buddy_tasks` 补 `frequency/time_of_day/interval_minutes/run_at/valid_from/valid_until/skills/model`；`buddy_task_runs` 补 `artifact_count/is_read`；频率派生 cron、once 到期停用、生效区间过滤；新增 `/buddy-runs/{id}/read`、`/buddy-tasks/meta`；前端展示 + 标记已读 | `schema.sql`、`migrations.json`、`operations.go`、`resources.go`、`buddy.js`、`styles.css` |
+| 6 | 波动率规则 | `rule_types` 增 `volatility`（共 8）；首次建基线通过，后续按列均值相对偏差判定（`max_deviation_rate` 默认 0.3），复用 `profile_baselines` 不新增表 | `quality.go`、`metadata.json` |
+
+### 元数据同步
+
+- `metadata.json`：`workflow.node_types` 增 `ifelse`/`foreach`（`node_type_count` 9→11，前端工作流编辑器按此动态生成类型与字段表单，无需改前端）；`rule_types` 增 `volatility`（7→8）。
+- `schema.sql` / `migrations.json`：两张 buddy 表追加字段（表尾追加方式，兼容已有库）。
+- 新增路由注册在 `operations.go`，未重复登记到 `foundation.go`（避免 `TestContractMigrationInventory` 的 duplicate 校验）。
+
+### 验证（本机 Windows x64；CGO 用 `D:\tools\winlibs\mingw64\bin\gcc.exe`）
+
+```bash
+CGO_ENABLED=1 go build ./...                                      # ✅
+CGO_ENABLED=1 go vet ./...                                        # ✅
+CGO_ENABLED=1 go test ./... -count=1                              # ✅ 62s 全绿
+ODB_HTTP_TEST=1 go test ./internal/platform/ -run TestHTTP -count=1 # ✅
+node --check web/js/*.js                                          # ✅
+```
+
+新增 `workflow_extensions_test.go`，7 个专项测试：`TestBuiltinParameterScope`、`TestBuiltinPlaceholderRenderingWithUpstream`、`TestIfElseAndForEachNodes`、`TestBranchExpressionWithStringComparison`、`TestAskModeRefusesWriteIntent`、`TestBuddyTaskFrequencyAndFields`、`TestVolatilityRule`。
+
+### 诚实边界（本轮新增）
+
+- 内置参数是**本地确定性展开**，非云端调度服务；手动运行时 `trigger.time` 回退到运行开始时间。
+- ForEach 是**进程内串行子图**，无并行/分布式；子图复用主流程权限与护栏；`first_row` 取首个迭代首个节点输出。
+- IF-ELSE 靠**下游边条件**分流（非节点多出口端口），语义等价但拓扑不同。
+- Ask 写意图检测是**启发式正则**，不替代模型语义理解；LLM 路径仍以 system prompt 为主、工具清空为辅。
+- 波动率基线为**列均值相对偏差**，非同环比/季节性模型；无历史时首次仅建基线不判异常。
+- 仍未做（§6.11 的 7–18）：产物文件化+diff、@ 结构化传参、统一检索、数据复核、治理标签体系、并发上限/排队、调度起止时间、搜索热度因子、CDC、Volume 同步、AI Gateway、推理可观测性。
+
+---
+
+## 历史记录（2026-11-13 及之前）
+
+### 本轮目标
 
 1. 按腾讯云官方《DataBuddy 产品动态》2026-08 版逐条对照本仓库，把「文档声称已具备、代码实际未生效」的地方改成真实实现，并按差距清单补齐功能。
 2. 按官方 Buddy 控制台截图重构前端：左侧任务栏、任务执行计划卡片、数据表芯片。

@@ -49,6 +49,51 @@ func (a *App) emit(ws string, m M) M {
 	}
 	return M{"event": event, "deliveries": deliveries, "total": len(deliveries), "simulated": alertSimulated()}
 }
+
+// buddyTaskCron derives a cron expression from the official frequency model:
+// daily (每天), interval (按间隔), once (单次). Explicit cron values win.
+func buddyTaskCron(t M) string {
+	if raw := str(t["cron"]); raw != "" {
+		return raw
+	}
+	freq := firstNonempty(str(t["frequency"]), "daily")
+	switch freq {
+	case "daily":
+		hhmm := strings.Split(firstNonempty(str(t["time_of_day"]), "03:00"), ":")
+		hh, mm := "3", "0"
+		if len(hhmm) == 2 {
+			hh, mm = hhmm[0], hhmm[1]
+		}
+		// Cron accepts leading zeros, but strip them for a stable representation.
+		hh = strconv.Itoa(int(num(hh)))
+		mm = strconv.Itoa(int(num(mm)))
+		return fmt.Sprintf("%s %s * * *", mm, hh)
+	case "interval":
+		minutes := int(mathMax(1, num(def(t, "interval_minutes", 60))))
+		if minutes >= 60 && minutes%60 == 0 {
+			return fmt.Sprintf("0 */%d * * *", minutes/60)
+		}
+		return fmt.Sprintf("*/%d * * * *", minutes)
+	case "once":
+		// Single-shot runs are driven by run_at through the `once` mode.
+		return ""
+	}
+	return "0 3 * * *"
+}
+
+// buddyTaskDue honours the optional effective date range (valid_from /
+// valid_until, YYYY-MM-DD) of a scheduled task.
+func buddyTaskDue(t M, local time.Time) bool {
+	day := local.Format("2006-01-02")
+	if v := str(t["valid_from"]); v != "" && day < v {
+		return false
+	}
+	if v := str(t["valid_until"]); v != "" && day > v {
+		return false
+	}
+	return true
+}
+
 func (a *App) buddyTask(ws string, t M) M {
 	u := a.row("SELECT * FROM users WHERE id=?", t["user_id"])
 	if u == nil {
@@ -59,9 +104,20 @@ func (a *App) buddyTask(ws string, t M) M {
 	}
 	a.workspace(u, ws)
 	c := &request{A: a, User: publicUser(u), WS: ws, Body: M{}}
-	conv := a.insert("conversations", M{"id": id(), "workspace_id": ws, "user_id": u["id"], "title": t["name"], "mode": def(t, "mode", "analysis"), "chat_mode": "agent", "created_at": now(), "updated_at": now()})
+	convFields := M{"id": id(), "workspace_id": ws, "user_id": u["id"], "title": t["name"], "mode": def(t, "mode", "analysis"), "chat_mode": "agent", "created_at": now(), "updated_at": now()}
+	// Selected model and skills travel with the scheduled conversation so the
+	// run uses the same configuration as an interactive chat (doc 1835/140860).
+	if model := str(t["model"]); model != "" {
+		convFields["model"] = model
+	}
+	if skills := str(t["skills"]); skills != "" {
+		convFields["skills"] = skills
+	}
+	conv := a.insert("conversations", convFields)
 	out := a.agent(c, conv, str(def(t, "prompt", t["question"])))
-	r := a.insert("buddy_task_runs", M{"id": id(), "task_id": t["id"], "workspace_id": ws, "conversation_id": conv["id"], "status": "success", "summary": out["content"], "started_at": now(), "finished_at": now()})
+	meta := obj(out["meta"])
+	artifactCount := len(arr(meta["artifacts"]))
+	r := a.insert("buddy_task_runs", M{"id": id(), "task_id": t["id"], "workspace_id": ws, "conversation_id": conv["id"], "status": "success", "summary": out["content"], "artifact_count": artifactCount, "is_read": 0, "started_at": now(), "finished_at": now()})
 	a.update("buddy_tasks", str(t["id"]), M{"last_run": now()})
 	return M{"run": r, "conversation": conv, "result": out}
 }
@@ -171,6 +227,21 @@ func (a *App) operationRoutes() []route {
 		}},
 		{"GET", "/api/buddy-runs", false, false, func(c *request) any {
 			return M{"runs": a.rows("SELECT * FROM buddy_task_runs WHERE workspace_id=? ORDER BY started_at DESC LIMIT 50", c.WS)}
+		}},
+		{"POST", "/api/buddy-runs/{run_id}/read", false, false, func(c *request) any {
+			run := a.row("SELECT * FROM buddy_task_runs WHERE id=? AND workspace_id=?", c.p("run_id"), c.WS)
+			if run == nil {
+				fail(404, "执行记录不存在")
+			}
+			a.update("buddy_task_runs", str(run["id"]), M{"is_read": 1})
+			return M{"ok": true, "run": a.row("SELECT * FROM buddy_task_runs WHERE id=?", run["id"])}
+		}},
+		{"POST", "/api/buddy-tasks/meta", false, false, func(c *request) any {
+			return M{"frequencies": []M{
+				{"key": "daily", "label": "每天"},
+				{"key": "interval", "label": "按间隔"},
+				{"key": "once", "label": "单次"},
+			}, "channel_types": metadata["channel_types"]}
 		}},
 		{"POST", "/api/external-catalogs/{catalog_id}/sync", false, false, func(c *request) any {
 			r := a.owned("external_catalogs", c.p("catalog_id"), c.WS)
@@ -335,6 +406,18 @@ func (a *App) Tick(at time.Time) {
 				} else if str(r["cron"]) != "" {
 					due = cronMatches(str(r["cron"]), local)
 				}
+				if table == "buddy_tasks" {
+					// Honour frequency=once (run_at) and the effective date range.
+					if str(def(r, "frequency", "daily")) == "once" {
+						due = false
+						if moment, e2 := parseRunAt(str(def(r, "run_at", "")), str(r["timezone"])); e2 == nil && !moment.After(local) {
+							due = true
+						}
+					}
+					if !buddyTaskDue(r, local) {
+						due = false
+					}
+				}
 				if !due {
 					return
 				}
@@ -352,6 +435,9 @@ func (a *App) Tick(at time.Time) {
 					a.update(table, str(r["id"]), M{"last_run_at": at.UTC().Format(time.RFC3339), "last_status": "success"})
 				case "buddy_tasks":
 					a.buddyTask(ws, r)
+					if str(def(r, "frequency", "daily")) == "once" {
+						a.update("buddy_tasks", str(r["id"]), M{"enabled": 0})
+					}
 				case "sync_tasks":
 					a.runSyncTask(ws, r)
 				}

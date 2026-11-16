@@ -7,6 +7,22 @@ import (
 	"strings"
 )
 
+// equalValue compares two expression values, preferring numeric comparison
+// when both sides look numeric and falling back to string / bool equality.
+func equalValue(l, r any) bool {
+	if _, lok := l.(string); lok {
+		if _, rok := r.(string); rok {
+			return str(l) == str(r)
+		}
+	}
+	if _, lok := l.(bool); lok {
+		if _, rok := r.(bool); rok {
+			return boolOf(l) == boolOf(r)
+		}
+	}
+	return num(l) == num(r)
+}
+
 func evalCondition(source string, vars M) bool {
 	source = strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(source, " and ", " && "), " or ", " || "), "not ", "!")
 	expr, e := parser.ParseExpr(source)
@@ -22,7 +38,10 @@ func evalCondition(source string, vars M) bool {
 			if x.Kind == token.INT || x.Kind == token.FLOAT {
 				return num(x.Value)
 			}
-			fail(422, "条件只支持数值与布尔值")
+			if x.Kind == token.STRING {
+				return strings.Trim(x.Value, `"`+"`"+`'`)
+			}
+			fail(422, "条件只支持数值、布尔与字符串值")
 		case *ast.Ident:
 			if x.Name == "true" {
 				return true
@@ -50,9 +69,9 @@ func evalCondition(source string, vars M) bool {
 			case token.LOR:
 				return boolOf(l) || boolOf(r)
 			case token.EQL:
-				return num(l) == num(r)
+				return equalValue(l, r)
 			case token.NEQ:
-				return num(l) != num(r)
+				return !equalValue(l, r)
 			case token.GTR:
 				return num(l) > num(r)
 			case token.GEQ:
