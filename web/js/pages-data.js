@@ -168,7 +168,7 @@ export async function renderIngest(page, ctx) {
   page.innerHTML = loading();
   const [{ tables }, { sources }] = await Promise.all([api.get('/catalog/tables'), api.get('/sources')]);
   const targets = [...new Set(tables.map((t) => `${t.catalog_name}.${t.schema_name}`))];
-  if (!targets.length) targets.push('demo.retail');
+  if (!targets.length) targets.push('demo.semi');
 
   page.innerHTML = `
     <div class="card flush">
@@ -238,13 +238,13 @@ export async function renderIngest(page, ctx) {
       body.innerHTML = card('用 SQL 生成新表', `
         <div class="grid-2" style="gap:16px">
           <div class="field"><label>目标位置</label><select id="s-target">${targets.map((t) => `<option>${esc(t)}</option>`).join('')}</select></div>
-          <div class="field"><label>新表名</label><input id="s-table" placeholder="例如 daily_gmv" /></div>
+          <div class="field"><label>新表名</label><input id="s-table" placeholder="例如 daily_wafer_out" /></div>
         </div>
         <div class="field"><label>SELECT 语句</label>
-          <textarea id="s-sql" rows="8" class="mono" style="font-family:var(--mono);font-size:12.5px">SELECT order_date,
-       sum(amount) AS gmv,
-       count(DISTINCT order_id) AS order_cnt
-FROM demo.retail.fact_orders
+          <textarea id="s-sql" rows="8" class="mono" style="font-family:var(--mono);font-size:12.5px">SELECT wip_date,
+       sum(lot_quantity) AS wafer_out,
+       sum(good_die) AS good_die
+FROM demo.semi.fact_wafer_out
 GROUP BY 1</textarea>
           <div class="hint">只允许只读 SELECT；结果会物化为新表</div></div>
         <button class="btn primary" id="do-sql">执行并建表</button>
@@ -359,13 +359,13 @@ export async function renderSql(page, ctx) {
           </div>
           <div style="padding:16px">
             <textarea id="sql" rows="10" class="mono" style="font-family:var(--mono);font-size:12.5px;min-height:200px">SELECT
-  c.channel_name,
-  round(sum(o.amount), 2) AS gmv,
-  count(DISTINCT o.order_id) AS orders
-FROM demo.retail.fact_orders o
-JOIN demo.retail.dim_channel c ON c.channel_id = o.channel_id
+  f.fab_name,
+  round(sum(o.lot_quantity), 0) AS wafer_out,
+  round(sum(o.revenue), 2) AS revenue
+FROM demo.semi.fact_wafer_out o
+JOIN demo.semi.dim_fab f ON f.fab_id = o.fab_id
 GROUP BY 1
-ORDER BY gmv DESC</textarea>
+ORDER BY revenue DESC</textarea>
             <div class="row mt-12">
               <button class="btn primary" id="run">运行</button>
               <button class="btn" id="fmt">格式化</button>

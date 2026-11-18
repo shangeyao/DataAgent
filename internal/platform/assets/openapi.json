@@ -11912,7 +11912,7 @@
           "target": {
             "type": "string",
             "title": "Target",
-            "default": "demo.retail"
+            "default": "demo.semi"
           },
           "table": {
             "type": "string",
@@ -11941,7 +11941,7 @@
           "target": {
             "type": "string",
             "title": "Target",
-            "default": "demo.retail"
+            "default": "demo.semi"
           },
           "volume": {
             "type": "string",
@@ -14637,7 +14637,7 @@
           "schema": {
             "type": "string",
             "title": "Schema",
-            "default": "retail"
+            "default": "semi"
           },
           "description": {
             "type": "string",

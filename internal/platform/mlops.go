@@ -532,7 +532,18 @@ func (a *App) compareModels(ws string, m M, left, right string) M {
 	if votes < 0 {
 		recommendation = "a"
 	}
-	return M{"model": m, "a": x, "b": y, "metrics": metrics, "recommendation": recommendation, "recommendation_text": "按各指标改进方向比较，推荐 " + recommendation}
+	fallbackRec := "按各指标改进方向比较，推荐 " + recommendation
+	metricLines := []string{}
+	for _, mt := range metrics {
+		metricLines = append(metricLines, fmt.Sprintf("%s：A=%v，B=%v，更优=%v", str(mt["metric"]), mt["a"], mt["b"], str(mt["better"])))
+	}
+	recText := a.llmTextBackground(
+		"你是模型评估专家。基于两个模型版本的指标对比，用简短中文给出推荐结论和理由。"+
+			"只使用提供的数据，不要编造指标；先给出明确结论（推荐 A / 推荐 B / 持平），再说明理由。不要输出 Markdown 标题。",
+		fmt.Sprintf("模型 A：%v\n模型 B：%v\n指标对比：\n- %s\n规则投票结论：%s",
+			str(x["name"]), str(y["name"]), strings.Join(metricLines, "\n- "), recommendation),
+		fallbackRec)
+	return M{"model": m, "a": x, "b": y, "metrics": metrics, "recommendation": recommendation, "recommendation_text": recText}
 }
 
 func (a *App) validateService(ws string, s M) {

@@ -46,8 +46,8 @@ func TestAttributionUsesOverallRatio(t *testing.T) {
 	a := testApp(t)
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
 	win := periodWindow("last_month")
-	expected := a.query(ws, fmt.Sprintf("SELECT sum(amount)/count(DISTINCT order_id) FROM fact_orders WHERE order_date >= DATE '%s' AND order_date <= DATE '%s'", win["start"], win["end"]), 10)
-	result := a.attribute(ws, M{"metric": "avg_order_value", "dimension": "channel_name", "period": "last_month"})
+	expected := a.query(ws, fmt.Sprintf("SELECT sum(revenue)/nullif(sum(lot_quantity),0) FROM fact_wafer_out WHERE wip_date >= DATE '%s' AND wip_date <= DATE '%s'", win["start"], win["end"]), 10)
+	result := a.attribute(ws, M{"metric": "avg_revenue_per_wafer", "dimension": "fab_name", "period": "last_month"})
 	if math.Abs(num(result["total_current"])-num(expected["rows"].([][]any)[0][0])) > 1e-9 {
 		t.Fatal("ratio must use the overall aggregate, not sum group ratios", result)
 	}
@@ -62,7 +62,7 @@ func TestNativeBootstrapAndPersistence(t *testing.T) {
 	if len(a.tables(str(w["id"]))) != 4 {
 		t.Fatal("demo catalog missing")
 	}
-	q := a.query(str(w["id"]), "SELECT count(*) AS n FROM fact_orders", 10)
+	q := a.query(str(w["id"]), "SELECT count(*) AS n FROM fact_wafer_out", 10)
 	if num(q["rows"].([][]any)[0][0]) != 5200 {
 		t.Fatal(q)
 	}
@@ -82,7 +82,7 @@ func TestSQLWorkspaceAndGuard(t *testing.T) {
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
 	other := id()
 	a.insert("workspaces", M{"id": other, "name": "isolated", "created_at": now()})
-	cases := []string{"SELECT * FROM read_csv('/etc/passwd')", "SELECT * FROM fact_orders; DELETE FROM users", "WITH x AS (DELETE FROM fact_orders RETURNING *) SELECT * FROM x", "SELECT * FROM information_schema.tables", "SELECT * FROM fact_orders, secret", "SELECT * FROM fact_orders JOIN query('select 1') ON true"}
+	cases := []string{"SELECT * FROM read_csv('/etc/passwd')", "SELECT * FROM fact_wafer_out; DELETE FROM users", "WITH x AS (DELETE FROM fact_wafer_out RETURNING *) SELECT * FROM x", "SELECT * FROM information_schema.tables", "SELECT * FROM fact_wafer_out, secret", "SELECT * FROM fact_wafer_out JOIN query('select 1') ON true"}
 	for _, q := range cases {
 		t.Run(q, func(t *testing.T) {
 			defer func() {
@@ -93,16 +93,16 @@ func TestSQLWorkspaceAndGuard(t *testing.T) {
 			a.query(ws, q, 10)
 		})
 	}
-	catches(t, 403, func() { a.query(other, "SELECT * FROM demo.retail.fact_orders", 10) })
-	q := a.query(ws, "WITH recent AS (SELECT order_id FROM fact_orders LIMIT 3) SELECT * FROM recent", 10)
+	catches(t, 403, func() { a.query(other, "SELECT * FROM demo.semi.fact_wafer_out", 10) })
+	q := a.query(ws, "WITH recent AS (SELECT wafer_id FROM fact_wafer_out LIMIT 3) SELECT * FROM recent", 10)
 	if q["row_count"] != 3 {
 		t.Fatal(q)
 	}
-	q = a.query(ws, "SELECT 'from fact_orders' AS label, 1 AS n", 1)
-	if q["rows"].([][]any)[0][0] != "from fact_orders" {
+	q = a.query(ws, "SELECT 'from fact_wafer_out' AS label, 1 AS n", 1)
+	if q["rows"].([][]any)[0][0] != "from fact_wafer_out" {
 		t.Fatal(q)
 	}
-	q = a.query(ws, "SELECT order_id FROM fact_orders", 5)
+	q = a.query(ws, "SELECT wafer_id FROM fact_wafer_out", 5)
 	if q["row_count"] != 5 || q["truncated"] != true {
 		t.Fatal(q)
 	}
@@ -110,17 +110,17 @@ func TestSQLWorkspaceAndGuard(t *testing.T) {
 func TestQualityAndDAG(t *testing.T) {
 	a := testApp(t)
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
-	r := a.newRule(ws, M{"table_ref": "fact_orders", "column_name": "amount", "rule_type": "range", "config": M{"min": 0, "max": 1000000, "blocking": true}})
+	r := a.newRule(ws, M{"table_ref": "fact_wafer_out", "column_name": "revenue", "rule_type": "range", "config": M{"min": 0, "max": 1000000, "blocking": true}})
 	result := a.runRule(ws, r)
 	if result["status"] != "pass" {
 		t.Fatal(result)
 	}
 	a.update("quality_rules", str(r["id"]), M{"config": M{"min": 1000000, "blocking": true}})
-	if a.runRules(ws, "demo.retail.fact_orders", true)["blocked"] != true {
+	if a.runRules(ws, "demo.semi.fact_wafer_out", true)["blocked"] != true {
 		t.Fatal("blocking check did not block")
 	}
 	catches(t, 422, func() { topo([]any{M{"id": "a"}, M{"id": "b"}}, []any{[]any{"a", "b"}, []any{"b", "a"}}) })
-	f := a.newFlow(ws, M{"name": "native-dag", "nodes": []any{M{"id": "a", "type": "sql", "config": M{"sql": "SELECT count(*) FROM fact_orders"}}, M{"id": "b", "type": "sql", "config": M{"sql": "SELECT 2"}}}, "edges": []any{[]any{"a", "b"}}})
+	f := a.newFlow(ws, M{"name": "native-dag", "nodes": []any{M{"id": "a", "type": "sql", "config": M{"sql": "SELECT count(*) FROM fact_wafer_out"}}, M{"id": "b", "type": "sql", "config": M{"sql": "SELECT 2"}}}, "edges": []any{[]any{"a", "b"}}})
 	run := a.runFlow(ws, f, M{}, "test", 0)
 	if run["status"] != "success" || len(arr(run["nodes"])) != 2 {
 		t.Fatal(run)
@@ -142,7 +142,7 @@ func TestNativePythonKernel(t *testing.T) {
 		t.Fatal(out)
 	}
 	out = a.python(key, "x + 3", M{})
-	callback := a.python(key, `query("SELECT count(*) FROM fact_orders")["rows"][0][0]`, M{})
+	callback := a.python(key, `query("SELECT count(*) FROM fact_wafer_out")["rows"][0][0]`, M{})
 	if num(callback["result"]) != 5200 {
 		t.Fatal("native SQL callback failed", callback)
 	}
@@ -210,7 +210,7 @@ func TestReportScheduleMinuteDedup(t *testing.T) {
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
 	a.exec("UPDATE flows SET enabled=0")
 	a.exec("UPDATE buddy_tasks SET enabled=0")
-	r := a.insert("reports", M{"id": id(), "workspace_id": ws, "name": "scheduled", "metrics": []string{"gmv"}, "period": "last_month", "created_at": now()})
+	r := a.insert("reports", M{"id": id(), "workspace_id": ws, "name": "scheduled", "metrics": []string{"revenue"}, "period": "last_month", "created_at": now()})
 	at := time.Now().UTC()
 	loc, _ := time.LoadLocation("Asia/Shanghai")
 	local := at.In(loc)
@@ -249,7 +249,7 @@ func TestAdditiveMigrationAndReopen(t *testing.T) {
 		t.Fatal("existing identity was modified")
 	}
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
-	r := a.query(ws, "SELECT count(*) FROM fact_orders", 1)
+	r := a.query(ws, "SELECT count(*) FROM fact_wafer_out", 1)
 	if num(r["rows"].([][]any)[0][0]) != 5200 {
 		t.Fatal("warehouse was reseeded or lost")
 	}
@@ -260,7 +260,7 @@ func TestMCPNativeIdentityAndTools(t *testing.T) {
 	token := id()
 	a.insert("sessions", M{"token": token, "user_id": u["id"], "created_at": now(), "expires_at": time.Now().Add(time.Hour).UTC().Format(time.RFC3339)})
 	t.Setenv("DATABUDDY_TOKEN", token)
-	input := strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"initialize"}` + "\n" + `{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"run_query","arguments":{"sql":"SELECT count(*) FROM fact_orders"}}}` + "\n")
+	input := strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"initialize"}` + "\n" + `{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"run_query","arguments":{"sql":"SELECT count(*) FROM fact_wafer_out"}}}` + "\n")
 	var out bytes.Buffer
 	if e := a.ServeMCP(input, &out); e != nil {
 		t.Fatal(e)
@@ -305,14 +305,14 @@ func TestCatalogStorageIsolation(t *testing.T) {
 	catID, schID := id(), id()
 	a.insert("workspaces", M{"id": other, "name": "independent", "created_at": now()})
 	cat := a.insert("catalogs", M{"id": catID, "workspace_id": other, "name": "demo", "physical_prefix": "odb_" + other + "_demo", "created_at": now()})
-	a.insert("schemas", M{"id": schID, "catalog_id": cat["id"], "name": "retail", "created_at": now()})
-	_, e := a.Lake.Exec("CREATE SCHEMA " + quote(lakeNamespace(str(cat["physical_prefix"]), "demo", "retail")))
+	a.insert("schemas", M{"id": schID, "catalog_id": cat["id"], "name": "semi", "created_at": now()})
+	_, e := a.Lake.Exec("CREATE SCHEMA " + quote(lakeNamespace(str(cat["physical_prefix"]), "demo", "semi")))
 	if e != nil {
 		t.Fatal(e)
 	}
-	a.importSQL(other, "demo.retail", "fact_orders", "SELECT 1 AS n", "isolated")
-	one := a.query(other, "SELECT count(*) FROM fact_orders", 1)
-	original := a.query(ws, "SELECT count(*) FROM fact_orders", 1)
+	a.importSQL(other, "demo.semi", "fact_wafer_out", "SELECT 1 AS n", "isolated")
+	one := a.query(other, "SELECT count(*) FROM fact_wafer_out", 1)
+	original := a.query(ws, "SELECT count(*) FROM fact_wafer_out", 1)
 	if num(one["rows"].([][]any)[0][0]) != 1 || num(original["rows"].([][]any)[0][0]) != 5200 {
 		t.Fatal("catalog namespaces overlap", one, original)
 	}
@@ -321,11 +321,11 @@ func TestCatalogStorageIsolation(t *testing.T) {
 func TestLineageColumnsAndGraphContract(t *testing.T) {
 	a := testApp(t)
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
-	out := a.discoverLineage(ws, M{"sql": "CREATE TABLE demo.retail.daily AS SELECT order_date, sum(amount) AS gmv FROM demo.retail.fact_orders GROUP BY 1", "save": true, "record_columns": true})
+	out := a.discoverLineage(ws, M{"sql": "CREATE TABLE demo.semi.daily AS SELECT wip_date, sum(revenue) AS revenue FROM demo.semi.fact_wafer_out GROUP BY 1", "save": true, "record_columns": true})
 	if num(out["recorded_columns"]) != 2 {
 		t.Fatal(out)
 	}
-	g := a.lineageView(ws, "demo.retail.fact_orders", "both", "table", 3)
+	g := a.lineageView(ws, "demo.semi.fact_wafer_out", "both", "table", 3)
 	if num(obj(g["counts"])["edges"]) == 0 {
 		t.Fatal(g)
 	}
@@ -335,7 +335,7 @@ func TestLineageColumnsAndGraphContract(t *testing.T) {
 			t.Fatal("SVG edge contract missing", e)
 		}
 	}
-	columns := a.lineageView(ws, "demo.retail.fact_orders", "both", "column", 3)
+	columns := a.lineageView(ws, "demo.semi.fact_wafer_out", "both", "column", 3)
 	if num(obj(columns["counts"])["edges"]) != 2 {
 		t.Fatal(columns)
 	}
@@ -357,7 +357,7 @@ func TestSyncTaskLandsInLake(t *testing.T) {
 	}
 	db.Close()
 	src := a.insert("sources", M{"id": id(), "workspace_id": ws, "name": "本地源", "type": "sqlite", "config": M{"path": path}, "status": "ok", "created_at": now()})
-	task := a.newSyncTask(ws, M{"name": "测试同步", "source_id": str(src["id"]), "target": "demo.retail", "mode": "full", "enabled": true})
+	task := a.newSyncTask(ws, M{"name": "测试同步", "source_id": str(src["id"]), "target": "demo.semi", "mode": "full", "enabled": true})
 	out := a.runSyncTask(ws, task)
 	if str(out["status"]) != "success" || num(out["total_rows"]) != 3 {
 		t.Fatal(out)
@@ -369,7 +369,7 @@ func TestSyncTaskLandsInLake(t *testing.T) {
 	if a.row("SELECT id FROM tables WHERE name='sync_demo'") == nil {
 		t.Fatal("synced table not registered")
 	}
-	exported := a.exportTable(ws, M{"table": "demo.retail.sync_demo", "format": "csv"})
+	exported := a.exportTable(ws, M{"table": "demo.semi.sync_demo", "format": "csv"})
 	if !boolOf(exported["ok"]) {
 		t.Fatal(exported)
 	}
@@ -382,7 +382,7 @@ func TestPredictServesRegisteredModel(t *testing.T) {
 	a := testApp(t)
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
 	model := a.insert("registered_models", M{"id": id(), "workspace_id": ws, "name": "复购率模型", "description": "", "source_experiment": "", "framework": "SQL", "owner": "", "created_at": now()})
-	a.addVersion(ws, model, M{"artifact_uri": "sql:SELECT count(*) AS n FROM demo.retail.fact_orders", "stage": "production"})
+	a.addVersion(ws, model, M{"artifact_uri": "sql:SELECT count(*) AS n FROM demo.semi.fact_wafer_out", "stage": "production"})
 	service := a.insert("model_services", M{"id": id(), "workspace_id": ws, "name": "复购率服务", "model_ref": str(model["id"]), "version": "v1", "replicas": 1, "min_replicas": 1, "max_replicas": 4, "target_qps": 50, "traffic": M{"v1": 100}, "status": "running", "created_at": now()})
 	out := a.predict(ws, str(service["id"]), M{})
 	rows := out["rows"].([][]any)
@@ -489,7 +489,7 @@ func TestReportDeliveryUsesScheduledChannel(t *testing.T) {
 func TestSuggestQualityRulesUseProfile(t *testing.T) {
 	a := testApp(t)
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
-	out := a.suggestQualityRules(ws, "demo.retail.dim_channel")
+	out := a.suggestQualityRules(ws, "demo.semi.dim_product")
 	rules := arr(out["rules"])
 	if len(rules) == 0 {
 		t.Fatal("no quality rule suggested", out)
@@ -515,7 +515,7 @@ func TestSuggestQualityRulesUseProfile(t *testing.T) {
 	// A categorical column of a small table must not be reported as unique.
 	for _, raw := range rules {
 		r := obj(raw)
-		if str(r["rule_type"]) == "unique" && str(r["column_name"]) == "channel_name" {
+		if str(r["rule_type"]) == "unique" && str(r["column_name"]) == "product_category" {
 			t.Fatal("noise suggestion on a small categorical column", r)
 		}
 	}
@@ -525,7 +525,7 @@ func TestSuggestQualityRulesUseProfile(t *testing.T) {
 		t.Fatal(art)
 	}
 	// A large table is sampled, so exact thresholds are not offered.
-	big := a.suggestQualityRules(ws, "demo.retail.fact_orders")
+	big := a.suggestQualityRules(ws, "demo.semi.fact_wafer_out")
 	if boolOf(big["complete"]) {
 		t.Fatal("a 5200 row table must be profiled as a sample", big)
 	}

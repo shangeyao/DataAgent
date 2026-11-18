@@ -725,7 +725,7 @@ async function renderSyncPane(host, ctx) {
     const data = await formModal({
       title: '新建同步任务',
       fields: [
-        { name: 'name', label: '任务名称', required: true, placeholder: '每日订单入库' },
+        { name: 'name', label: '任务名称', required: true, placeholder: '每日晶圆产出入库' },
         { name: 'source_id', label: '数据源', type: 'select', options: sqliteSources.map((s) => ({ value: s.id, label: s.name })) },
         { name: 'target', label: '目标 Schema', placeholder: 'catalog.schema，留空则写入 synced.main' },
         { name: 'cron', label: '调度表达式', placeholder: '0 2 * * *' },

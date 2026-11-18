@@ -25,3 +25,7 @@ node_modules/
 /stop-lan.ps1
 /.tmp-data/
 /.tmp-temp/
+# local temp/build artifacts (not for repo)
+/.tmp-*/
+/.backup-reta-assets/
+*.bak

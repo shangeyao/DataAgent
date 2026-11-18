@@ -16,8 +16,8 @@ const CELL_META = {
 };
 
 const DEFAULT_SOURCES = {
-  sql: 'SELECT\n  c.channel_name,\n  round(sum(o.amount), 2) AS gmv,\n  count(DISTINCT o.order_id) AS orders\nFROM demo.retail.fact_orders o\nJOIN demo.retail.dim_channel c ON c.channel_id = o.channel_id\nGROUP BY 1\nORDER BY gmv DESC',
-  python: '# 变量在本 notebook 内跨 cell 共享\nrows = query("SELECT count(*) AS c FROM demo.retail.fact_orders")\ntotal = rows["rows"][0][0]\nprint("订单总数", total)\ntotal',
+  sql: 'SELECT\n  f.fab_name,\n  round(sum(o.lot_quantity), 0) AS wafer_out,\n  round(sum(o.revenue), 2) AS revenue\nFROM demo.semi.fact_wafer_out o\nJOIN demo.semi.dim_fab f ON f.fab_id = o.fab_id\nGROUP BY 1\nORDER BY revenue DESC',
+  python: '# 变量在本 notebook 内跨 cell 共享\nrows = query("SELECT count(*) AS c FROM demo.semi.fact_wafer_out")\ntotal = rows["rows"][0][0]\nprint("晶圆工单总数", total)\ntotal',
   markdown: '## 分析结论\n\n- 这里写 Markdown 文档\n- `%tables` 查看可用表',
 };
 

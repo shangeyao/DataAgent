@@ -84,13 +84,13 @@ func (a *App) heuristic(c *request, conv, question string) (content string, out 
 		out = call("list_tables", M{})
 		content = fmt.Sprintf("当前工作空间有 %d 张表。", len(tables))
 	case regexp.MustCompile(`表结构|字段结构|有哪些列|(?i:schema)`).MatchString(question):
-		out = call("describe_table", M{"table": pick("fact_orders")})
+		out = call("describe_table", M{"table": pick("fact_wafer_out")})
 		content = fmt.Sprintf("%s 共 %d 个字段。", obj(out["table"])["ref"], len(arr(out["columns"])))
 	case regexp.MustCompile(`敏感|脱敏|隐私|(?i:pii)|个人信息`).MatchString(question):
 		out = call("scan_sensitive", M{"table": pick("dim_customer")})
 		content = fmt.Sprintf("扫描完成，识别到 %v 个敏感字段。", out["count"])
 	case regexp.MustCompile(`质量|校验|空值|重复|异常值`).MatchString(question):
-		out = call("run_quality_rules", M{"table": pick("fact_orders")})
+		out = call("run_quality_rules", M{"table": pick("fact_wafer_out")})
 		content = fmt.Sprintf("质量检查：%v/%v 条规则通过。", out["passed"], out["total"])
 	default:
 		if regexp.MustCompile(`口径|定义|怎么算|如何计算|含义|是什么意思`).MatchString(question) {

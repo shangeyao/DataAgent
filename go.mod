@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/duckdb/duckdb-go/v2 v2.10504.0
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/gogf/gf/v2 v2.10.4
 	github.com/mattn/go-sqlite3 v1.14.24
 	golang.org/x/crypto v0.48.0
@@ -11,6 +12,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/apache/arrow-go/v18 v18.5.1 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect

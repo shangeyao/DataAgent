@@ -1,1 +1,821 @@
-{"workspaces": [{"id": "94d133c123d444bc", "name": "零售数据智能", "description": "OpenDataBuddy 示例工作空间，内置零售数仓数据集", "owner_id": "ea799a9b9b014b00", "created_at": "2026-11-10T12:28:02+08:00"}], "workspace_members": [{"workspace_id": "94d133c123d444bc", "user_id": "ea799a9b9b014b00", "role": "admin"}], "catalogs": [{"id": "55c5bc0e6c2f4be6", "workspace_id": "94d133c123d444bc", "name": "demo", "description": "示例 Catalog，本地 DuckDB 承载", "created_at": "2026-11-10T12:28:02+08:00"}], "schemas": [{"id": "3c34d906d1a84d79", "catalog_id": "55c5bc0e6c2f4be6", "name": "retail", "description": "零售业务域", "created_at": "2026-11-10T12:28:02+08:00"}], "tables": [{"id": "d5665b88f9eb4be0", "schema_id": "3c34d906d1a84d79", "name": "dim_channel", "kind": "table", "description": "渠道维度表：电商平台 / 内容电商 / 线下 / 私域", "row_count": 5, "source_id": null, "tags": "", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}, {"id": "3900cda995f04d4a", "schema_id": "3c34d906d1a84d79", "name": "dim_customer", "kind": "table", "description": "客户维度表，含手机号、邮箱、身份证等敏感字段", "row_count": 600, "source_id": null, "tags": "", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}, {"id": "0305b7741977451e", "schema_id": "3c34d906d1a84d79", "name": "dim_product", "kind": "table", "description": "商品维度表：品类、品牌、吊牌价与成本价", "row_count": 17, "source_id": null, "tags": "", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}, {"id": "ef27b1264436413f", "schema_id": "3c34d906d1a84d79", "name": "fact_orders", "kind": "table", "description": "订单事实表：一行一个订单商品行，含金额、折扣、状态", "row_count": 5200, "source_id": null, "tags": "", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}], "columns": [{"id": "f2c4863e91bf4681", "table_id": "d5665b88f9eb4be0", "name": "channel_id", "data_type": "VARCHAR", "description": "", "ordinal": 0, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "d1160b52c2144573", "table_id": "d5665b88f9eb4be0", "name": "channel_name", "data_type": "VARCHAR", "description": "", "ordinal": 1, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "9d774753a1ce4e8e", "table_id": "d5665b88f9eb4be0", "name": "channel_type", "data_type": "VARCHAR", "description": "", "ordinal": 2, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "9a5c7c820ee843af", "table_id": "3900cda995f04d4a", "name": "customer_id", "data_type": "VARCHAR", "description": "", "ordinal": 0, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "23cebabd2300437e", "table_id": "3900cda995f04d4a", "name": "customer_name", "data_type": "VARCHAR", "description": "", "ordinal": 1, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "cf56dadb4a284388", "table_id": "3900cda995f04d4a", "name": "gender", "data_type": "VARCHAR", "description": "", "ordinal": 2, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "3ee3a6b5d7284e0c", "table_id": "3900cda995f04d4a", "name": "age", "data_type": "INTEGER", "description": "", "ordinal": 3, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "b180bc4f0c6f4911", "table_id": "3900cda995f04d4a", "name": "city", "data_type": "VARCHAR", "description": "", "ordinal": 4, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "7b3432be50b64f4a", "table_id": "3900cda995f04d4a", "name": "phone", "data_type": "VARCHAR", "description": "", "ordinal": 5, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "65eea65189614d48", "table_id": "3900cda995f04d4a", "name": "email", "data_type": "VARCHAR", "description": "", "ordinal": 6, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "bcc159fe89514181", "table_id": "3900cda995f04d4a", "name": "id_card", "data_type": "VARCHAR", "description": "", "ordinal": 7, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "30e9fe6de68c49b8", "table_id": "3900cda995f04d4a", "name": "register_date", "data_type": "DATE", "description": "", "ordinal": 8, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "7d09c400cfe9461e", "table_id": "3900cda995f04d4a", "name": "member_level", "data_type": "VARCHAR", "description": "", "ordinal": 9, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "d2fcf98a84ec43dd", "table_id": "0305b7741977451e", "name": "product_id", "data_type": "VARCHAR", "description": "", "ordinal": 0, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "d0b9e7370fe243cb", "table_id": "0305b7741977451e", "name": "product_name", "data_type": "VARCHAR", "description": "", "ordinal": 1, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "8435f417e8874b82", "table_id": "0305b7741977451e", "name": "category", "data_type": "VARCHAR", "description": "", "ordinal": 2, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "9fdc1e764e2b48e2", "table_id": "0305b7741977451e", "name": "brand", "data_type": "VARCHAR", "description": "", "ordinal": 3, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "606da84e8c4c49ed", "table_id": "0305b7741977451e", "name": "list_price", "data_type": "DOUBLE", "description": "", "ordinal": 4, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "d0b61b53246b4946", "table_id": "0305b7741977451e", "name": "cost_price", "data_type": "DOUBLE", "description": "", "ordinal": 5, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "f474f8a232964726", "table_id": "ef27b1264436413f", "name": "order_id", "data_type": "VARCHAR", "description": "", "ordinal": 0, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "f48d70014fb3477c", "table_id": "ef27b1264436413f", "name": "order_date", "data_type": "DATE", "description": "", "ordinal": 1, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "4214a21d8c874048", "table_id": "ef27b1264436413f", "name": "customer_id", "data_type": "VARCHAR", "description": "", "ordinal": 2, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "5b285653bd2a4f81", "table_id": "ef27b1264436413f", "name": "product_id", "data_type": "VARCHAR", "description": "", "ordinal": 3, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "c08ff48a348846e1", "table_id": "ef27b1264436413f", "name": "channel_id", "data_type": "VARCHAR", "description": "", "ordinal": 4, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "1e6d7732f9ad4683", "table_id": "ef27b1264436413f", "name": "quantity", "data_type": "INTEGER", "description": "", "ordinal": 5, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "34928023cadf40ec", "table_id": "ef27b1264436413f", "name": "amount", "data_type": "DOUBLE", "description": "", "ordinal": 6, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "e719e6a12d0f488c", "table_id": "ef27b1264436413f", "name": "discount", "data_type": "DOUBLE", "description": "", "ordinal": 7, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "de3624ca7be64987", "table_id": "ef27b1264436413f", "name": "status", "data_type": "VARCHAR", "description": "", "ordinal": 8, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "3041e1f0ee8b4c28", "table_id": "ef27b1264436413f", "name": "terminal", "data_type": "VARCHAR", "description": "", "ordinal": 9, "is_nullable": 1, "created_at": "2026-11-10T12:28:05+08:00"}], "column_tags": [{"id": "edbcff0c9c574564", "column_id": "7b3432be50b64f4a", "tag": "手机号", "level": "L3", "source": "ai", "confidence": 1.0, "evidence": "100/100 抽样值命中 手机号 模式", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "642a1cef03af4c69", "column_id": "65eea65189614d48", "tag": "邮箱", "level": "L3", "source": "ai", "confidence": 1.0, "evidence": "100/100 抽样值命中 邮箱 模式", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "92943aac4c0247c9", "column_id": "bcc159fe89514181", "tag": "身份证号", "level": "L3", "source": "ai", "confidence": 0.95, "evidence": "列名匹配 /id_?card|identity|身份证/", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "54fa5418882a4b6a", "column_id": "23cebabd2300437e", "tag": "姓名", "level": "L2", "source": "ai", "confidence": 0.7, "evidence": "列名匹配 /(^|_)(name|full_name)(_|$)|姓名/", "created_at": "2026-11-10T12:28:05+08:00"}], "lineage": [{"id": "1dab295627454282", "workspace_id": "94d133c123d444bc", "upstream": "demo.retail.fact_orders", "downstream": "demo.retail.dim_customer", "kind": "sql", "detail": "订单事实表通过 customer_id 关联客户维度", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "45f1a1e8305a4b6c", "workspace_id": "94d133c123d444bc", "upstream": "demo.retail.fact_orders", "downstream": "demo.retail.dim_product", "kind": "sql", "detail": "订单事实表通过 customer_id 关联客户维度", "created_at": "2026-11-10T12:28:05+08:00"}], "metrics": [{"id": "dc6e44194df343ac", "workspace_id": "94d133c123d444bc", "name": "gmv", "display_name": "GMV", "description": "成交总额，口径为订单金额之和，含未退款订单", "expr": "sum(f.amount)", "table_ref": "demo.retail.fact_orders", "filters": "", "unit": "元", "dimensions": "[\"order_date\", \"channel_name\", \"category\", \"city\", \"gender\"]", "joins": "[{\"table\": \"demo.retail.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"city\", \"gender\", \"member_level\", \"customer_name\"]}, {\"table\": \"demo.retail.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"category\", \"brand\", \"product_name\"]}, {\"table\": \"demo.retail.dim_channel\", \"alias\": \"dh\", \"on\": \"dh.channel_id = f.channel_id\", \"columns\": [\"channel_name\", \"channel_type\"]}]", "owner": "admin", "status": "published", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "f197e7aca4be4c90", "workspace_id": "94d133c123d444bc", "name": "order_cnt", "display_name": "订单量", "description": "去重订单数，一行订单商品明细折成一个订单", "expr": "count(DISTINCT f.order_id)", "table_ref": "demo.retail.fact_orders", "filters": "", "unit": "单", "dimensions": "[\"order_date\", \"channel_name\", \"category\", \"city\"]", "joins": "[{\"table\": \"demo.retail.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"city\", \"gender\", \"member_level\", \"customer_name\"]}, {\"table\": \"demo.retail.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"category\", \"brand\", \"product_name\"]}, {\"table\": \"demo.retail.dim_channel\", \"alias\": \"dh\", \"on\": \"dh.channel_id = f.channel_id\", \"columns\": [\"channel_name\", \"channel_type\"]}]", "owner": "admin", "status": "published", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "0a1e6d30376c4e54", "workspace_id": "94d133c123d444bc", "name": "avg_order_value", "display_name": "客单价", "description": "GMV / 订单量，反映单笔成交能力", "expr": "sum(f.amount) / nullif(count(DISTINCT f.order_id), 0)", "table_ref": "demo.retail.fact_orders", "filters": "", "unit": "元", "dimensions": "[\"order_date\", \"channel_name\", \"category\"]", "joins": "[{\"table\": \"demo.retail.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"city\", \"gender\", \"member_level\", \"customer_name\"]}, {\"table\": \"demo.retail.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"category\", \"brand\", \"product_name\"]}, {\"table\": \"demo.retail.dim_channel\", \"alias\": \"dh\", \"on\": \"dh.channel_id = f.channel_id\", \"columns\": [\"channel_name\", \"channel_type\"]}]", "owner": "admin", "status": "published", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "c547b0dd32de48ba", "workspace_id": "94d133c123d444bc", "name": "customer_cnt", "display_name": "成交客户数", "description": "当期有成交的去重客户数", "expr": "count(DISTINCT f.customer_id)", "table_ref": "demo.retail.fact_orders", "filters": "", "unit": "人", "dimensions": "[\"order_date\", \"city\", \"member_level\"]", "joins": "[{\"table\": \"demo.retail.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"city\", \"gender\", \"member_level\", \"customer_name\"]}, {\"table\": \"demo.retail.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"category\", \"brand\", \"product_name\"]}, {\"table\": \"demo.retail.dim_channel\", \"alias\": \"dh\", \"on\": \"dh.channel_id = f.channel_id\", \"columns\": [\"channel_name\", \"channel_type\"]}]", "owner": "admin", "status": "published", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "48b91fd9e7fd456c", "workspace_id": "94d133c123d444bc", "name": "refund_rate", "display_name": "退款率", "description": "退款订单数 / 订单总数", "expr": "sum(CASE WHEN f.status = 'refund' THEN 1 ELSE 0 END) * 1.0 / nullif(count(*), 0)", "table_ref": "demo.retail.fact_orders", "filters": "", "unit": "%", "dimensions": "[\"order_date\", \"channel_name\", \"category\"]", "joins": "[{\"table\": \"demo.retail.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"city\", \"gender\", \"member_level\", \"customer_name\"]}, {\"table\": \"demo.retail.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"category\", \"brand\", \"product_name\"]}, {\"table\": \"demo.retail.dim_channel\", \"alias\": \"dh\", \"on\": \"dh.channel_id = f.channel_id\", \"columns\": [\"channel_name\", \"channel_type\"]}]", "owner": "admin", "status": "published", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "d7d14f7ebaa44797", "workspace_id": "94d133c123d444bc", "name": "qty", "display_name": "销量", "description": "售出商品件数", "expr": "sum(f.quantity)", "table_ref": "demo.retail.fact_orders", "filters": "", "unit": "件", "dimensions": "[\"order_date\", \"category\", \"brand\"]", "joins": "[{\"table\": \"demo.retail.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"city\", \"gender\", \"member_level\", \"customer_name\"]}, {\"table\": \"demo.retail.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"category\", \"brand\", \"product_name\"]}, {\"table\": \"demo.retail.dim_channel\", \"alias\": \"dh\", \"on\": \"dh.channel_id = f.channel_id\", \"columns\": [\"channel_name\", \"channel_type\"]}]", "owner": "admin", "status": "published", "created_at": "2026-11-10T12:28:05+08:00"}], "knowledge_docs": [{"id": "ec2427a4835a4f42", "workspace_id": "94d133c123d444bc", "title": "数仓分层规范", "content": "ODS：原始贴源层，结构与源系统一致，只做同步不做加工。\nDWD：明细层，完成清洗、去重、维度关联，保留业务过程粒度。\nDWS：汇总层，按主题聚合的宽表，供分析与看板使用。\nDIM：公共维度层，客户、商品、渠道等一致性维度。\nADS：应用层，面向具体报表与 Agent 消费的结果表。\n命名规则：层级前缀 + 业务域 + 描述，例如 dwd_trade_order_detail。", "source_type": "manual", "tags": "规范", "scope": "workspace", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}, {"id": "a2d39a8f86604708", "workspace_id": "94d133c123d444bc", "title": "指标口径说明", "content": "GMV = sum(amount)，统计已支付与已退款订单，退款不回冲，另用退款率单独监控。\n订单量 = count(distinct order_id)，一行订单商品明细折成一个订单。\n客单价 = GMV / 订单量，保留两位小数。\n成交客户数 = count(distinct customer_id)，按自然月去重。\n退款率 = 退款订单数 / 订单总数，按订单数而非金额计算。", "source_type": "manual", "tags": "指标", "scope": "workspace", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}, {"id": "9c002f76d7534306", "workspace_id": "94d133c123d444bc", "title": "业务术语表", "content": "渠道：指订单来源，分为电商平台（天猫、京东）、内容电商（抖音直播）、线下门店、私域（小程序商城）。\n会员等级：黄金 / 白银 / 普通，按近 12 个月累计消费划分。\n动销：统计周期内产生过订单的商品。\n连带率：单个订单平均包含的商品件数。", "source_type": "manual", "tags": "术语", "scope": "workspace", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}, {"id": "3ec2c90453444feb", "workspace_id": "94d133c123d444bc", "title": "敏感数据与合规要求", "content": "客户手机号、邮箱、身份证号属于个人敏感信息（PII），对外提供数据时必须脱敏。\n手机号保留前 3 后 4，中间用 * 掩码；身份证号保留前 6 后 4。\n涉及个人信息导出的需求需数据管理员审批，并记录审计日志。\n合规框架参考《个人信息保护法》（PIPL）与 GDPR 的数据最小化原则。", "source_type": "manual", "tags": "合规", "scope": "workspace", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}], "flows": [{"id": "7d4f2a8fade44ed0", "workspace_id": "94d133c123d444bc", "name": "每日经营数据刷新", "description": "示例工作流：销售汇总 → 质量校验 → 品类贡献，每天 07:00 调度", "nodes": "[{\"id\": \"n1\", \"type\": \"sql\", \"name\": \"构建每日销售汇总\", \"config\": {\"sql\": \"SELECT order_date, sum(amount) AS gmv, count(DISTINCT order_id) AS order_cnt, count(DISTINCT customer_id) AS customer_cnt FROM demo.retail.fact_orders GROUP BY order_date ORDER BY order_date\"}}, {\"id\": \"n2\", \"type\": \"quality\", \"name\": \"校验订单金额非空\", \"config\": {\"sql\": \"SELECT count(*) AS bad FROM demo.retail.fact_orders WHERE amount IS NULL\"}}, {\"id\": \"n3\", \"type\": \"sql\", \"name\": \"输出品类贡献\", \"config\": {\"sql\": \"SELECT p.category, sum(o.amount) AS gmv FROM demo.retail.fact_orders o JOIN demo.retail.dim_product p ON p.product_id = o.product_id GROUP BY 1 ORDER BY gmv DESC\"}}]", "edges": "[[\"n1\", \"n2\"], [\"n2\", \"n3\"]]", "cron": "0 7 * * *", "enabled": 1, "retries": 0, "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}], "dashboards": [{"id": "e4b7e8360da447b9", "workspace_id": "94d133c123d444bc", "name": "零售经营总览", "description": "示例看板，由语义层指标直接生成", "spec": "{\"cards\": [{\"title\": \"近 30 天 GMV 趋势\", \"chart\": {\"type\": \"line\", \"x\": 0, \"y\": 1}, \"sql\": \"SELECT * FROM (SELECT order_date, round(sum(amount), 2) AS gmv FROM demo.retail.fact_orders GROUP BY 1 ORDER BY 1 DESC LIMIT 30) t ORDER BY order_date\"}, {\"title\": \"渠道销售占比\", \"chart\": {\"type\": \"pie\", \"x\": 0, \"y\": 1}, \"sql\": \"SELECT c.channel_name, round(sum(o.amount), 2) AS gmv FROM demo.retail.fact_orders o JOIN demo.retail.dim_channel c ON c.channel_id = o.channel_id GROUP BY 1 ORDER BY gmv DESC\"}, {\"title\": \"品类排行\", \"chart\": {\"type\": \"bar\", \"x\": 0, \"y\": 1}, \"sql\": \"SELECT p.category, round(sum(o.amount), 2) AS gmv FROM demo.retail.fact_orders o JOIN demo.retail.dim_product p ON p.product_id = o.product_id GROUP BY 1 ORDER BY gmv DESC\"}, {\"title\": \"大区客户分布\", \"chart\": {\"type\": \"bar\", \"x\": 0, \"y\": 1}, \"sql\": \"SELECT c.city, count(DISTINCT o.customer_id) AS customers FROM demo.retail.fact_orders o JOIN demo.retail.dim_customer c ON c.customer_id = o.customer_id GROUP BY 1 ORDER BY customers DESC\"}]}", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}], "quality_rules": [{"id": "e665ce3a35534269", "workspace_id": "94d133c123d444bc", "table_ref": "demo.retail.fact_orders", "column_name": "amount", "rule_type": "null_rate", "config": "{\"max_rate\": 0}", "enabled": 1, "last_status": "pass", "last_value": "0.00%", "last_run_at": "2026-11-10T12:28:05+08:00", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "1b253dfd07884e14", "workspace_id": "94d133c123d444bc", "table_ref": "demo.retail.fact_orders", "column_name": "order_id", "rule_type": "uniqueness", "config": "{\"max_dup\": 0}", "enabled": 1, "last_status": "pass", "last_value": "重复 0", "last_run_at": "2026-11-10T12:28:05+08:00", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "bb42f77922324e91", "workspace_id": "94d133c123d444bc", "table_ref": "demo.retail.fact_orders", "column_name": "amount", "rule_type": "range", "config": "{\"min\": 0, \"max\": 1000000}", "enabled": 1, "last_status": "pass", "last_value": "越界 0", "last_run_at": "2026-11-10T12:28:05+08:00", "created_at": "2026-11-10T12:28:05+08:00"}], "compute_resources": [{"id": "e23f947ea55e458c", "workspace_id": "94d133c123d444bc", "name": "demo_job_cluster", "description": "POC 作业集群，跑 Notebook 与 Python 任务", "type": "job", "engine": "Spark", "compute_type": "CPU", "image": "Standard-S 1.1", "cu": 64, "status": "running", "network": "", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "a30d22d21df349e2", "workspace_id": "94d133c123d444bc", "name": "demo_interactive", "description": "交互式查询集群，供 SQL 探索与看板使用", "type": "interactive", "engine": "Spark", "compute_type": "CPU", "image": "Standard-S 1.1", "cu": 32, "status": "stopped", "network": "", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "f8e5f5fe224b4e8f", "workspace_id": "94d133c123d444bc", "name": "demo_platform", "description": "平台集群，承载离线接入与连通性测试", "type": "platform", "engine": "平台服务", "compute_type": "CPU", "image": "Standard-S 1.1", "cu": 16, "status": "running", "network": "vpc-demo / subnet-1", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "a0839b9034374be3", "workspace_id": "94d133c123d444bc", "name": "demo_realtime", "description": "实时集群，承载 Flink 实时接入", "type": "realtime", "engine": "Flink", "compute_type": "CPU", "image": "Standard-S 1.1", "cu": 32, "status": "running", "network": "vpc-demo / subnet-1", "created_at": "2026-11-10T12:28:05+08:00"}], "model_experiments": [{"id": "231ed2a84e934eee", "workspace_id": "94d133c123d444bc", "name": "churn_prediction_lgb", "framework": "LightGBM", "status": "success", "metrics": "{\"auc\": 0.862, \"f1\": 0.74, \"样本\": 52000}", "owner": "管理员", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}, {"id": "934373ee49d8454f", "workspace_id": "94d133c123d444bc", "name": "gmv_forecast_prophet", "framework": "Prophet", "status": "success", "metrics": "{\"mape\": 0.081, \"horizon\": 30}", "owner": "管理员", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}, {"id": "08ec1a16b6614462", "workspace_id": "94d133c123d444bc", "name": "repurchase_uplift", "framework": "XGBoost", "status": "running", "metrics": "{\"uplift@10%\": 0.127}", "owner": "管理员", "created_at": "2026-11-10T12:28:05+08:00", "updated_at": "2026-11-10T12:28:05+08:00"}], "model_services": [{"id": "a1959b87147f49da", "workspace_id": "94d133c123d444bc", "name": "churn_score_api", "model_ref": "churn_prediction_lgb", "version": "v3", "replicas": 2, "status": "running", "endpoint": "/svc/churn-score", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "0e8f2cbde81b401b", "workspace_id": "94d133c123d444bc", "name": "gmv_forecast_api", "model_ref": "gmv_forecast_prophet", "version": "v1", "replicas": 1, "status": "stopped", "endpoint": "/svc/gmv-forecast", "created_at": "2026-11-10T12:28:05+08:00"}], "agents": [{"id": "89ee6d41b31249fc", "workspace_id": "94d133c123d444bc", "name": "数仓建设助手", "mode": "engineering", "description": "从一句需求生成分层方案、DDL、ETL 与调度", "prompt": "你是数据工程专家。先用 list_tables 看资产，再给分层方案，SQL 必须可执行。", "tools": "[\"list_tables\", \"describe_table\", \"run_query\", \"query_metric\"]", "status": "published", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "f966c83418e34ac8", "workspace_id": "94d133c123d444bc", "name": "合规治理官", "mode": "governance", "description": "敏感字段扫描、分级打标与质量规则巡检", "prompt": "你是数据治理专家。每次判定都要给证据与置信度，按 L1~L4 分级。", "tools": "[\"list_tables\", \"describe_table\", \"run_query\", \"query_metric\"]", "status": "published", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "151e1aec19ae4ec7", "workspace_id": "94d133c123d444bc", "name": "经营分析官", "mode": "analysis", "description": "问数、异动归因、日报与看板生成", "prompt": "你是数据分析专家。结论先行，给对比、构成、趋势三类依据。", "tools": "[\"list_tables\", \"describe_table\", \"run_query\", \"query_metric\"]", "status": "published", "created_at": "2026-11-10T12:28:05+08:00"}], "apps": [{"id": "3918aee6170b48fc", "workspace_id": "94d133c123d444bc", "name": "门店经营速览", "type": "dashboard", "description": "面向店长的经营看板，嵌出到企业微信", "entry": "/dashboards", "status": "online", "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "93d73c2a3e6b48e2", "workspace_id": "94d133c123d444bc", "name": "供应商对账助手", "type": "chat", "description": "对账差异问询，只读访问订单与结算表", "entry": "/buddy", "status": "online", "created_at": "2026-11-10T12:28:05+08:00"}], "buddy_tasks": [{"id": "e54039d8ecf74fa6", "workspace_id": "94d133c123d444bc", "user_id": null, "name": "每日经营早报", "prompt": "汇总昨日 GMV、订单量、退款率，与上周同期对比，生成早报", "cron": "0 9 * * *", "enabled": 1, "last_run": null, "created_at": "2026-11-10T12:28:05+08:00"}, {"id": "781a31419a894374", "workspace_id": "94d133c123d444bc", "user_id": null, "name": "每周质量巡检", "prompt": "对所有已启用质量规则跑一遍，汇总未通过项并给出修复建议", "cron": "0 8 * * 1", "enabled": 1, "last_run": null, "created_at": "2026-11-10T12:28:05+08:00"}], "analysis_spaces": [{"id": "1b4ae9bd63b24f58", "workspace_id": "94d133c123d444bc", "name": "零售经营分析", "description": "面向业务方的经营分析空间，绑定订单事实表与核心指标", "tables": "[\"demo.retail.fact_orders\", \"demo.retail.dim_channel\", \"demo.retail.dim_product\"]", "metrics": "[\"gmv\", \"order_cnt\", \"avg_order_value\", \"refund_rate\"]", "owner": "管理员", "created_at": "2026-11-10T12:28:05+08:00"}]}
+{
+ "workspaces": [
+  {
+   "id": "1629dee48cc4e531",
+   "name": "半导体数仓智能",
+   "description": "OpenDataBuddy 示例工作空间，内置晶圆产出数仓数据集（Doris 语义对齐）",
+   "owner_id": "72122ce96bfec66e",
+   "created_at": "2026-11-10T12:28:02+08:00"
+  }
+ ],
+ "workspace_members": [
+  {
+   "workspace_id": "1629dee48cc4e531",
+   "user_id": "72122ce96bfec66e",
+   "role": "admin"
+  }
+ ],
+ "catalogs": [
+  {
+   "id": "46f22f2a56ddd091",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "demo",
+   "description": "示例 Catalog，本地 DuckDB 承载（物理命名 demo__semi）",
+   "created_at": "2026-11-10T12:28:02+08:00"
+  }
+ ],
+ "schemas": [
+  {
+   "id": "c9550d5fad73447f",
+   "catalog_id": "46f22f2a56ddd091",
+   "name": "semi",
+   "description": "半导体业务域：晶圆产出、良率与客户",
+   "created_at": "2026-11-10T12:28:02+08:00"
+  }
+ ],
+ "tables": [
+  {
+   "id": "3ccdb31fa207a4d0",
+   "schema_id": "c9550d5fad73447f",
+   "name": "dim_product",
+   "kind": "table",
+   "description": "产品（晶圆/芯片）维度表：型号、制程节点、品类与封装",
+   "row_count": 17,
+   "source_id": null,
+   "tags": "",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "6e89341980aaa5a6",
+   "schema_id": "c9550d5fad73447f",
+   "name": "dim_fab",
+   "kind": "table",
+   "description": "晶圆厂维度表：厂区、所在地与制程定位",
+   "row_count": 5,
+   "source_id": null,
+   "tags": "",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "e993ce69fd89fde5",
+   "schema_id": "c9550d5fad73447f",
+   "name": "dim_customer",
+   "kind": "table",
+   "description": "客户维度表（半导体下游）：行业、区域与总部",
+   "row_count": 600,
+   "source_id": null,
+   "tags": "",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "5c05121727b1ea5e",
+   "schema_id": "c9550d5fad73447f",
+   "name": "fact_wafer_out",
+   "kind": "table",
+   "description": "晶圆产出事实表：一行一个出货批次，含产出数、良率与营收",
+   "row_count": 5200,
+   "source_id": null,
+   "tags": "",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "columns": [
+  {
+   "id": "00941f36aab33494",
+   "table_id": "3ccdb31fa207a4d0",
+   "name": "product_id",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 0,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "43b3680e7f7b4839",
+   "table_id": "3ccdb31fa207a4d0",
+   "name": "product_name",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 1,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "150af244ba1e8d78",
+   "table_id": "3ccdb31fa207a4d0",
+   "name": "process_node",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 2,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "f5fa087918ddcc00",
+   "table_id": "3ccdb31fa207a4d0",
+   "name": "product_category",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 3,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "8d64fb0d152a3326",
+   "table_id": "3ccdb31fa207a4d0",
+   "name": "package_type",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 4,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "a3c6fd4d96cae4e7",
+   "table_id": "6e89341980aaa5a6",
+   "name": "fab_id",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 0,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "981c446fb5d348cb",
+   "table_id": "6e89341980aaa5a6",
+   "name": "fab_name",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 1,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "bc05898b5415fb9d",
+   "table_id": "6e89341980aaa5a6",
+   "name": "fab_location",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 2,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "f416bcb174d5a1bd",
+   "table_id": "6e89341980aaa5a6",
+   "name": "fab_type",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 3,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "617b289991a1859d",
+   "table_id": "e993ce69fd89fde5",
+   "name": "customer_id",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 0,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "e06656ff5de85354",
+   "table_id": "e993ce69fd89fde5",
+   "name": "customer_name",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 1,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "5851ce2ab77543c0",
+   "table_id": "e993ce69fd89fde5",
+   "name": "segment",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 2,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "8f52ae6d529077da",
+   "table_id": "e993ce69fd89fde5",
+   "name": "region",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 3,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "9c0d1d00a757e440",
+   "table_id": "e993ce69fd89fde5",
+   "name": "headquarters",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 4,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "bfb01a35c39e2b80",
+   "table_id": "5c05121727b1ea5e",
+   "name": "wip_date",
+   "data_type": "DATE",
+   "description": "",
+   "ordinal": 0,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "34a4964068e80bb6",
+   "table_id": "5c05121727b1ea5e",
+   "name": "wafer_id",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 1,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "17de1a19c008f1a2",
+   "table_id": "5c05121727b1ea5e",
+   "name": "product_id",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 2,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "995ebbc11ba1d4f7",
+   "table_id": "5c05121727b1ea5e",
+   "name": "fab_id",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 3,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "e9b95cfc6d468476",
+   "table_id": "5c05121727b1ea5e",
+   "name": "customer_id",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 4,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "db8420568632d0ad",
+   "table_id": "5c05121727b1ea5e",
+   "name": "lot_id",
+   "data_type": "VARCHAR",
+   "description": "",
+   "ordinal": 5,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "4f8b2e8f03665322",
+   "table_id": "5c05121727b1ea5e",
+   "name": "lot_quantity",
+   "data_type": "INTEGER",
+   "description": "",
+   "ordinal": 6,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "173c21df0e282c9f",
+   "table_id": "5c05121727b1ea5e",
+   "name": "gross_die",
+   "data_type": "INTEGER",
+   "description": "",
+   "ordinal": 7,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "a63c42b6effd50aa",
+   "table_id": "5c05121727b1ea5e",
+   "name": "good_die",
+   "data_type": "INTEGER",
+   "description": "",
+   "ordinal": 8,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "c5559bfefd670689",
+   "table_id": "5c05121727b1ea5e",
+   "name": "yield_pct",
+   "data_type": "DOUBLE",
+   "description": "",
+   "ordinal": 9,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "5c2b6ce4082b7a92",
+   "table_id": "5c05121727b1ea5e",
+   "name": "revenue",
+   "data_type": "DOUBLE",
+   "description": "",
+   "ordinal": 10,
+   "is_nullable": 1,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "column_tags": [
+  {
+   "id": "e9bae3ce1d7ac00b",
+   "column_id": "981c446fb5d348cb",
+   "tag": "厂区名称",
+   "level": "L2",
+   "source": "ai",
+   "confidence": 0.7,
+   "evidence": "列名匹配 /(^|_)(name|full_name)(_|$)|名称/",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "f32af7d8e6b19f67",
+   "column_id": "e06656ff5de85354",
+   "tag": "客户名称",
+   "level": "L2",
+   "source": "ai",
+   "confidence": 0.7,
+   "evidence": "列名匹配 /(^|_)(name|full_name)(_|$)|名称/",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "ac00dfc2c5c11187",
+   "column_id": "43b3680e7f7b4839",
+   "tag": "型号名称",
+   "level": "L2",
+   "source": "ai",
+   "confidence": 0.7,
+   "evidence": "列名匹配 /(^|_)(name|full_name)(_|$)|型号/",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "270fe66f34a4feb9",
+   "column_id": "9c0d1d00a757e440",
+   "tag": "总部地点",
+   "level": "L1",
+   "source": "ai",
+   "confidence": 0.6,
+   "evidence": "列名匹配 /headquarter|总部/",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "lineage": [
+  {
+   "id": "8127a87e007032ac",
+   "workspace_id": "1629dee48cc4e531",
+   "upstream": "demo.semi.fact_wafer_out",
+   "downstream": "demo.semi.dim_product",
+   "kind": "sql",
+   "detail": "晶圆产出事实表通过 product_id 关联产品维度",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "c03f15c0df02a874",
+   "workspace_id": "1629dee48cc4e531",
+   "upstream": "demo.semi.fact_wafer_out",
+   "downstream": "demo.semi.dim_fab",
+   "kind": "sql",
+   "detail": "晶圆产出事实表通过 fab_id 关联晶圆厂维度",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "metrics": [
+  {
+   "id": "85393e24edafc3b2",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "wafer_out",
+   "display_name": "晶圆出货量",
+   "description": "当期晶圆出货片数（lot_quantity 之和），反映产能交付",
+   "expr": "sum(f.lot_quantity)",
+   "table_ref": "demo.semi.fact_wafer_out",
+   "filters": "",
+   "unit": "片",
+   "dimensions": "[\"wip_date\", \"process_node\", \"product_category\", \"segment\", \"region\", \"fab_name\"]",
+   "joins": "[{\"table\": \"demo.semi.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"customer_name\", \"segment\", \"region\", \"headquarters\"]}, {\"table\": \"demo.semi.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"product_name\", \"process_node\", \"product_category\", \"package_type\"]}, {\"table\": \"demo.semi.dim_fab\", \"alias\": \"df\", \"on\": \"df.fab_id = f.fab_id\", \"columns\": [\"fab_name\", \"fab_location\", \"fab_type\"]}]",
+   "owner": "admin",
+   "status": "published",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "619d6d177738c21a",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "good_die",
+   "display_name": "良品芯片数",
+   "description": "当期通过电测的良品芯片总数（good_die 之和）",
+   "expr": "sum(f.good_die)",
+   "table_ref": "demo.semi.fact_wafer_out",
+   "filters": "",
+   "unit": "颗",
+   "dimensions": "[\"wip_date\", \"process_node\", \"product_category\", \"segment\", \"region\", \"fab_name\"]",
+   "joins": "[{\"table\": \"demo.semi.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"customer_name\", \"segment\", \"region\", \"headquarters\"]}, {\"table\": \"demo.semi.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"product_name\", \"process_node\", \"product_category\", \"package_type\"]}, {\"table\": \"demo.semi.dim_fab\", \"alias\": \"df\", \"on\": \"df.fab_id = f.fab_id\", \"columns\": [\"fab_name\", \"fab_location\", \"fab_type\"]}]",
+   "owner": "admin",
+   "status": "published",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "51e55552abeea49f",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "revenue",
+   "display_name": "晶圆营收",
+   "description": "晶圆出货营收总额（万元，revenue 之和）",
+   "expr": "sum(f.revenue)",
+   "table_ref": "demo.semi.fact_wafer_out",
+   "filters": "",
+   "unit": "万元",
+   "dimensions": "[\"wip_date\", \"process_node\", \"product_category\", \"segment\", \"region\", \"fab_name\"]",
+   "joins": "[{\"table\": \"demo.semi.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"customer_name\", \"segment\", \"region\", \"headquarters\"]}, {\"table\": \"demo.semi.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"product_name\", \"process_node\", \"product_category\", \"package_type\"]}, {\"table\": \"demo.semi.dim_fab\", \"alias\": \"df\", \"on\": \"df.fab_id = f.fab_id\", \"columns\": [\"fab_name\", \"fab_location\", \"fab_type\"]}]",
+   "owner": "admin",
+   "status": "published",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "d1feae04c43c57cf",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "yield_rate",
+   "display_name": "综合良率",
+   "description": "良品芯片 / 总芯片，衡量制程良率水平",
+   "expr": "sum(f.good_die) * 1.0 / nullif(sum(f.gross_die), 0)",
+   "table_ref": "demo.semi.fact_wafer_out",
+   "filters": "",
+   "unit": "%",
+   "dimensions": "[\"wip_date\", \"process_node\", \"product_category\", \"segment\", \"region\", \"fab_name\"]",
+   "joins": "[{\"table\": \"demo.semi.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"customer_name\", \"segment\", \"region\", \"headquarters\"]}, {\"table\": \"demo.semi.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"product_name\", \"process_node\", \"product_category\", \"package_type\"]}, {\"table\": \"demo.semi.dim_fab\", \"alias\": \"df\", \"on\": \"df.fab_id = f.fab_id\", \"columns\": [\"fab_name\", \"fab_location\", \"fab_type\"]}]",
+   "owner": "admin",
+   "status": "published",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "b526b6c655c40fe1",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "avg_revenue_per_wafer",
+   "display_name": "单片营收",
+   "description": "晶圆营收 / 出货片数，反映单片价值量",
+   "expr": "sum(f.revenue) / nullif(sum(f.lot_quantity), 0)",
+   "table_ref": "demo.semi.fact_wafer_out",
+   "filters": "",
+   "unit": "万元/片",
+   "dimensions": "[\"wip_date\", \"process_node\", \"product_category\", \"segment\", \"region\", \"fab_name\"]",
+   "joins": "[{\"table\": \"demo.semi.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"customer_name\", \"segment\", \"region\", \"headquarters\"]}, {\"table\": \"demo.semi.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"product_name\", \"process_node\", \"product_category\", \"package_type\"]}, {\"table\": \"demo.semi.dim_fab\", \"alias\": \"df\", \"on\": \"df.fab_id = f.fab_id\", \"columns\": [\"fab_name\", \"fab_location\", \"fab_type\"]}]",
+   "owner": "admin",
+   "status": "published",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "c53978c554dbd713",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "customer_cnt",
+   "display_name": "出货客户数",
+   "description": "当期有出货的去重客户数",
+   "expr": "count(DISTINCT f.customer_id)",
+   "table_ref": "demo.semi.fact_wafer_out",
+   "filters": "",
+   "unit": "家",
+   "dimensions": "[\"wip_date\", \"segment\", \"region\"]",
+   "joins": "[{\"table\": \"demo.semi.dim_customer\", \"alias\": \"dc\", \"on\": \"dc.customer_id = f.customer_id\", \"columns\": [\"customer_name\", \"segment\", \"region\", \"headquarters\"]}, {\"table\": \"demo.semi.dim_product\", \"alias\": \"dp\", \"on\": \"dp.product_id = f.product_id\", \"columns\": [\"product_name\", \"process_node\", \"product_category\", \"package_type\"]}, {\"table\": \"demo.semi.dim_fab\", \"alias\": \"df\", \"on\": \"df.fab_id = f.fab_id\", \"columns\": [\"fab_name\", \"fab_location\", \"fab_type\"]}]",
+   "owner": "admin",
+   "status": "published",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "knowledge_docs": [
+  {
+   "id": "83e4b1789306d3d1",
+   "workspace_id": "1629dee48cc4e531",
+   "title": "数仓分层规范",
+   "content": "ODS：原始贴源层，结构与源系统一致，只做同步不做加工（如采集线工具日志、量测文件）。\nDWD：明细层，完成清洗、去重、维度关联，保留业务过程粒度（如晶圆产出明细）。\nDWS：汇总层，按主题聚合的宽表，供分析与看板使用。\nDIM：公共维度层，产品、晶圆厂、客户等一致性维度。\nADS：应用层，面向具体报表与 Agent 消费的结果表。\n命名规则：层级前缀 + 业务域 + 描述，例如 dwd_semi_wafer_out_detail。",
+   "source_type": "manual",
+   "tags": "规范",
+   "scope": "workspace",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "271559ec25268bb9",
+   "workspace_id": "1629dee48cc4e531",
+   "title": "指标口径说明",
+   "content": "晶圆出货量 = sum(lot_quantity)，统计当期已产出并出货的晶圆片数。\n良品芯片数 = sum(good_die)，通过最终电测（sort test）的芯片数量。\n综合良率 = sum(good_die) / sum(gross_die)，按总产出芯片口径而非单片计量。\n晶圆营收 = sum(revenue)，按出货批次计价，单位为万元，含税。\n单片营收 = 晶圆营收 / 晶圆出货量，反映单片价值量与产品结构。\n出货客户数 = count(distinct customer_id)，按自然月去重。",
+   "source_type": "manual",
+   "tags": "指标",
+   "scope": "workspace",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "af75c71ac23e1156",
+   "workspace_id": "1629dee48cc4e531",
+   "title": "业务术语表",
+   "content": "晶圆 Wafer：芯片制造的圆形硅衬底，按片计。\n晶圆厂 Fab：半导体制造工厂，按所在地与制程定位区分。\n制程节点：如 7nm / 28nm，决定特征尺寸与良率水平。\n良率 Yield：合格芯片 / 总芯片，关键成本与产能指标。\n光刻 / CMP / 电测 Sort：晶圆制造关键工序与最终测试，测试决定 good_die 口径。",
+   "source_type": "manual",
+   "tags": "术语",
+   "scope": "workspace",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "b2341b7b98aa9592",
+   "workspace_id": "1629dee48cc4e531",
+   "title": "敏感数据与合规要求",
+   "content": "客户名单、晶圆厂内部制程与良率数据属于商业机密（Corporate Confidential），对外须脱敏与授权。\n跨境流动：涉及海外客户的营收与出货明细需遵循出口管制与数据跨境合规要求。\n厂区/型号/良率等工程数据导出需数据管理员审批，并记录审计日志。\n合规框架：参考出口管制清单（ECCN）与个人/商业数据最小化原则。",
+   "source_type": "manual",
+   "tags": "合规",
+   "scope": "workspace",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "flows": [
+  {
+   "id": "cff5497121104c2b",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "每日晶圆产出刷新",
+   "description": "示例工作流：产出汇总 → 质量校验 → 良率贡献，每天 07:00 调度",
+   "nodes": "[{\"id\": \"n1\", \"type\": \"sql\", \"name\": \"构建每日产出汇总\", \"config\": {\"sql\": \"SELECT wip_date, sum(lot_quantity) AS wafer_out, sum(good_die) AS good_die, round(sum(good_die)*1.0/nullif(sum(gross_die),0)*100,2) AS yield_pct FROM demo.semi.fact_wafer_out GROUP BY wip_date ORDER BY wip_date\"}}, {\"id\": \"n2\", \"type\": \"quality\", \"name\": \"校验良率范围\", \"config\": {\"sql\": \"SELECT count(*) AS bad FROM demo.semi.fact_wafer_out WHERE yield_pct < 0 OR yield_pct > 100\"}}, {\"id\": \"n3\", \"type\": \"sql\", \"name\": \"输出制程良率贡献\", \"config\": {\"sql\": \"SELECT p.process_node, round(sum(f.good_die)*1.0/nullif(sum(f.gross_die),0)*100,2) AS yield_pct, sum(f.revenue) AS revenue FROM demo.semi.fact_wafer_out f JOIN demo.semi.dim_product p ON p.product_id = f.product_id GROUP BY 1 ORDER BY revenue DESC\"}}]",
+   "edges": "[[\"n1\", \"n2\"], [\"n2\", \"n3\"]]",
+   "cron": "0 7 * * *",
+   "enabled": 1,
+   "retries": 0,
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "dashboards": [
+  {
+   "id": "b999a7c3bcc5535b",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "晶圆良率总览",
+   "description": "示例看板，由语义层指标直接生成",
+   "spec": "{\"cards\": [{\"title\": \"近 30 天综合良率趋势\", \"chart\": {\"type\": \"line\", \"x\": 0, \"y\": 1}, \"sql\": \"SELECT * FROM (SELECT wip_date, round(sum(good_die)*1.0/nullif(sum(gross_die),0)*100,2) AS yield_pct FROM demo.semi.fact_wafer_out GROUP BY 1 ORDER BY 1 DESC LIMIT 30) t ORDER BY wip_date\"}, {\"title\": \"各制程节点良率\", \"chart\": {\"type\": \"bar\", \"x\": 0, \"y\": 1}, \"sql\": \"SELECT p.process_node, round(sum(f.good_die)*1.0/nullif(sum(f.gross_die),0)*100,2) AS yield_pct FROM demo.semi.fact_wafer_out f JOIN demo.semi.dim_product p ON p.product_id=f.product_id GROUP BY 1 ORDER BY yield_pct DESC\"}, {\"title\": \"客户营收排行\", \"chart\": {\"type\": \"bar\", \"x\": 0, \"y\": 1}, \"sql\": \"SELECT c.customer_name, round(sum(f.revenue),2) AS revenue FROM demo.semi.fact_wafer_out f JOIN demo.semi.dim_customer c ON c.customer_id=f.customer_id GROUP BY 1 ORDER BY revenue DESC LIMIT 10\"}, {\"title\": \"晶圆厂产出分布\", \"chart\": {\"type\": \"pie\", \"x\": 0, \"y\": 1}, \"sql\": \"SELECT df.fab_name, sum(f.lot_quantity) AS wafer_out FROM demo.semi.fact_wafer_out f JOIN demo.semi.dim_fab df ON df.fab_id=f.fab_id GROUP BY 1 ORDER BY wafer_out DESC\"}]}",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "quality_rules": [
+  {
+   "id": "8b87528ae2bc6d97",
+   "workspace_id": "1629dee48cc4e531",
+   "table_ref": "demo.semi.fact_wafer_out",
+   "column_name": "revenue",
+   "rule_type": "null_rate",
+   "config": "{\"max_rate\": 0}",
+   "enabled": 1,
+   "last_status": "pass",
+   "last_value": "0.00%",
+   "last_run_at": "2026-11-10T12:28:05+08:00",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "5669ba326dfd9a45",
+   "workspace_id": "1629dee48cc4e531",
+   "table_ref": "demo.semi.fact_wafer_out",
+   "column_name": "wafer_id",
+   "rule_type": "uniqueness",
+   "config": "{\"max_dup\": 0}",
+   "enabled": 1,
+   "last_status": "pass",
+   "last_value": "重复 0",
+   "last_run_at": "2026-11-10T12:28:05+08:00",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "e4fb8e4cfd6a2f16",
+   "workspace_id": "1629dee48cc4e531",
+   "table_ref": "demo.semi.fact_wafer_out",
+   "column_name": "yield_pct",
+   "rule_type": "range",
+   "config": "{\"min\": 0, \"max\": 100}",
+   "enabled": 1,
+   "last_status": "pass",
+   "last_value": "越界 0",
+   "last_run_at": "2026-11-10T12:28:05+08:00",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "compute_resources": [
+  {
+   "id": "a9f7e97965d6cf79",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "demo_job_cluster",
+   "description": "POC 作业集群，跑 Notebook 与 Python 任务",
+   "type": "job",
+   "engine": "Spark",
+   "compute_type": "CPU",
+   "image": "Standard-S 1.1",
+   "cu": 64,
+   "status": "running",
+   "network": "",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "9ab62b5ef34a9854",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "demo_interactive",
+   "description": "交互式查询集群，供 SQL 探索与看板使用",
+   "type": "interactive",
+   "engine": "Spark",
+   "compute_type": "CPU",
+   "image": "Standard-S 1.1",
+   "cu": 32,
+   "status": "stopped",
+   "network": "",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "0a3d72134fb3d6c0",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "demo_platform",
+   "description": "平台集群，承载离线接入与连通性测试",
+   "type": "platform",
+   "engine": "平台服务",
+   "compute_type": "CPU",
+   "image": "Standard-S 1.1",
+   "cu": 16,
+   "status": "running",
+   "network": "vpc-demo / subnet-1",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "cb7524d792327e4c",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "demo_realtime",
+   "description": "实时集群，承载 Flink 实时接入",
+   "type": "realtime",
+   "engine": "Flink",
+   "compute_type": "CPU",
+   "image": "Standard-S 1.1",
+   "cu": 32,
+   "status": "running",
+   "network": "vpc-demo / subnet-1",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "model_experiments": [
+  {
+   "id": "a03936a341bded30",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "yield_prediction_lgb",
+   "framework": "LightGBM",
+   "status": "success",
+   "metrics": "{\"auc\": 0.862, \"f1\": 0.74, \"样本\": 52000}",
+   "owner": "管理员",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "e578203a9e0b1904",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "wafer_forecast_prophet",
+   "framework": "Prophet",
+   "status": "success",
+   "metrics": "{\"mape\": 0.081, \"horizon\": 30}",
+   "owner": "管理员",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "5124d6d647608bca",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "rework_uplift",
+   "framework": "XGBoost",
+   "status": "running",
+   "metrics": "{\"uplift@10%\": 0.127}",
+   "owner": "管理员",
+   "created_at": "2026-11-10T12:28:05+08:00",
+   "updated_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "model_services": [
+  {
+   "id": "f209672a3e014941",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "yield_score_api",
+   "model_ref": "yield_prediction_lgb",
+   "version": "v3",
+   "replicas": 2,
+   "status": "running",
+   "endpoint": "/svc/yield-score",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "090b152383f983de",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "wafer_forecast_api",
+   "model_ref": "wafer_forecast_prophet",
+   "version": "v1",
+   "replicas": 1,
+   "status": "stopped",
+   "endpoint": "/svc/wafer-forecast",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "agents": [
+  {
+   "id": "8a8bb7cd343aa2ad",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "数仓建设助手",
+   "mode": "engineering",
+   "description": "从一句需求生成分层方案、DDL、ETL 与调度",
+   "prompt": "你是数据工程专家。先用 list_tables 看资产，再给分层方案，SQL 必须可执行。",
+   "tools": "[\"list_tables\", \"describe_table\", \"run_query\", \"query_metric\"]",
+   "status": "published",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "693a9fdd4c2fd070",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "合规治理官",
+   "mode": "governance",
+   "description": "敏感字段扫描、分级打标与质量规则巡检",
+   "prompt": "你是数据治理专家。每次判定都要给证据与置信度，按 L1~L4 分级。",
+   "tools": "[\"list_tables\", \"describe_table\", \"run_query\", \"query_metric\"]",
+   "status": "published",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "9d607a663f3e9b0a",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "晶圆良率分析官",
+   "mode": "analysis",
+   "description": "问题、良率归因、日报与看板生成",
+   "prompt": "你是半导体制造数据分析专家。结论先行，给出货、良率、营收三类依据。",
+   "tools": "[\"list_tables\", \"describe_table\", \"run_query\", \"query_metric\"]",
+   "status": "published",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "apps": [
+  {
+   "id": "f92ea1839dc16d73",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "晶圆厂产出速览",
+   "type": "dashboard",
+   "description": "面向厂长的产出与良率看板，嵌出到企业微信",
+   "entry": "/dashboards",
+   "status": "online",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "ec8d838607528268",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "客户出货对账助手",
+   "type": "chat",
+   "description": "出货与营收差异问询，只读访问客户端维度与产出表",
+   "entry": "/buddy",
+   "status": "online",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "buddy_tasks": [
+  {
+   "id": "d811bcffe8304601",
+   "workspace_id": "1629dee48cc4e531",
+   "user_id": null,
+   "name": "每日晶圆产出早报",
+   "prompt": "汇总昨日晶圆出货量、良率与营收，与上周同期对比，生成早报",
+   "cron": "0 9 * * *",
+   "enabled": 1,
+   "last_run": null,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  },
+  {
+   "id": "52d1c04c273fc436",
+   "workspace_id": "1629dee48cc4e531",
+   "user_id": null,
+   "name": "每周质量巡检",
+   "prompt": "对所有已启用质量规则跑一遍，汇总未通过项并给出修复建议",
+   "cron": "0 8 * * 1",
+   "enabled": 1,
+   "last_run": null,
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ],
+ "analysis_spaces": [
+  {
+   "id": "1298cbdc3eacd6ee",
+   "workspace_id": "1629dee48cc4e531",
+   "name": "晶圆产线经营分析",
+   "description": "面向业务方的良率与营收分析空间，绑定产出事实表与核心指标",
+   "tables": "[\"demo.semi.fact_wafer_out\", \"demo.semi.dim_fab\", \"demo.semi.dim_product\"]",
+   "metrics": "[\"wafer_out\", \"good_die\", \"revenue\", \"yield_rate\", \"avg_revenue_per_wafer\"]",
+   "owner": "管理员",
+   "created_at": "2026-11-10T12:28:05+08:00"
+  }
+ ]
+}

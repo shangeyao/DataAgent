@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -107,6 +108,23 @@ func semanticVector(tokens []string) [][]any {
 func semanticHash(title, content string) string {
 	sum := sha256.Sum256([]byte(title + content))
 	return hex.EncodeToString(sum[:])
+}
+
+// semanticDenseVectors 尝试用外部 Embedding 模型（如 bge-m3）把文本转成
+// 稠密向量。服务未配置或调用失败时返回 nil，调用方回退到本地稀疏哈希向量。
+func (a *App) semanticDenseVectors(texts []string) [][]float64 {
+	defer func() {
+		if r := recover(); r != nil {
+			// 模型服务异常时静默降级，不让索引/检索整体失败。
+		}
+	}()
+	return a.embedTexts(context.Background(), texts)
+}
+
+// semanticDenseEnabled 判断是否配置了外部 Embedding 服务。
+func (a *App) semanticDenseEnabled() bool {
+	c := a.embeddingConf()
+	return c.BaseURL != "" && c.Model != ""
 }
 
 // semanticParseVector 读取 doc_embeddings.vector 的 JSON 稀疏向量。
@@ -217,13 +235,33 @@ func (a *App) rebuildSemanticIndex(ws string) M {
 		}
 	}
 
+	// 一次性生成全部文档的稠密向量（外部模型）；失败则留空回退到稀疏向量。
+	dense := map[string]string{}
+	if a.semanticDenseEnabled() {
+		texts := make([]string, 0, len(docs))
+		for _, d := range docs {
+			texts = append(texts, str(d["title"])+"\n"+str(d["content"]))
+		}
+		if vecs := a.semanticDenseVectors(texts); vecs != nil {
+			for i, d := range docs {
+				if i < len(vecs) {
+					dense[str(d["id"])] = js(vecs[i])
+				}
+			}
+		}
+	}
+
 	termsTotal := 0
 	for _, c := range corpus {
 		docID := str(c.row["id"])
 		hash := semanticHash(str(c.row["title"]), str(c.row["content"]))
-		a.exec("INSERT INTO doc_embeddings (doc_id, workspace_id, vector, dim, indexed_at, content_hash) VALUES (?,?,?,?,?,?) "+
-			"ON CONFLICT(doc_id) DO UPDATE SET workspace_id=excluded.workspace_id, vector=excluded.vector, dim=excluded.dim, indexed_at=excluded.indexed_at, content_hash=excluded.content_hash",
-			docID, ws, js(c.vector), semanticDim, now(), hash)
+		dim := semanticDim
+		if _, ok := dense[docID]; ok {
+			dim = a.embeddingConf().Dim
+		}
+		a.exec("INSERT INTO doc_embeddings (doc_id, workspace_id, vector, dense_vector, dim, indexed_at, content_hash) VALUES (?,?,?,?,?,?,?) "+
+			"ON CONFLICT(doc_id) DO UPDATE SET workspace_id=excluded.workspace_id, vector=excluded.vector, dense_vector=excluded.dense_vector, dim=excluded.dim, indexed_at=excluded.indexed_at, content_hash=excluded.content_hash",
+			docID, ws, js(c.vector), dense[docID], dim, now(), hash)
 		// 倒排词条：先清掉该文档旧词，避免改稿后遗留过期 term
 		a.exec("DELETE FROM doc_terms WHERE workspace_id=? AND doc_id=?", ws, docID)
 		for _, t := range semanticDedup(c.terms) {
@@ -250,10 +288,28 @@ func (a *App) semanticSearch(ws, q string, limit int) []M {
 	qVec := semanticVector(semanticTokens(q))
 	qMap := semanticParseVector(js(qVec))
 
+	// 外部稠密向量（bge-m3）：可用时优先用余弦相似度，语义召回更准。
+	qDense := []float64{}
+	denseMode := false
+	if a.semanticDenseEnabled() {
+		if vecs := a.semanticDenseVectors([]string{q}); vecs != nil && len(vecs) > 0 {
+			qDense = vecs[0]
+			denseMode = true
+		}
+	}
+
 	// 读取向量与倒排表
 	vecs := map[string]map[int]float64{}
-	for _, r := range a.rows("SELECT doc_id, vector FROM doc_embeddings WHERE workspace_id=?", ws) {
-		vecs[str(r["doc_id"])] = semanticParseVector(str(r["vector"]))
+	denseVecs := map[string][]float64{}
+	for _, r := range a.rows("SELECT doc_id, vector, dense_vector FROM doc_embeddings WHERE workspace_id=?", ws) {
+		docID := str(r["doc_id"])
+		vecs[docID] = semanticParseVector(str(r["vector"]))
+		if raw := str(r["dense_vector"]); raw != "" {
+			var dv []float64
+			if json.Unmarshal([]byte(raw), &dv) == nil {
+				denseVecs[docID] = dv
+			}
+		}
 	}
 	lex := map[string]float64{}
 	for _, t := range qTokens {
@@ -273,6 +329,14 @@ func (a *App) semanticSearch(ws, q string, limit int) []M {
 	for _, d := range docs {
 		docID := str(d["id"])
 		cos := semanticCosine(qMap, vecs[docID])
+		// 外部稠密模型可用且该文档已生成向量时，用稠密余弦替换稀疏余弦。
+		engine := "hybrid"
+		if denseMode {
+			if dv, ok := denseVecs[docID]; ok && len(dv) > 0 {
+				cos = denseCosine(qDense, dv)
+				engine = "dense+" + a.embeddingConf().Model
+			}
+		}
 		lv := lex[docID]
 		lvNorm := 0.0
 		if maxLex > 0 {
@@ -292,7 +356,7 @@ func (a *App) semanticSearch(ws, q string, limit int) []M {
 		}
 		res["score"] = math.Round(score*10000) / 10000
 		res["snippet"] = string(snippet)
-		res["engine"] = "hybrid"
+		res["engine"] = engine
 		res["vector_score"] = math.Round(cos*10000) / 10000
 		res["lexical_score"] = math.Round(lvNorm*10000) / 10000
 		out = append(out, res)
@@ -343,9 +407,17 @@ func (a *App) indexKnowledgeDoc(ws, docID string) {
 		}
 	}
 	hash := semanticHash(str(d["title"]), str(d["content"]))
-	a.exec("INSERT INTO doc_embeddings (doc_id, workspace_id, vector, dim, indexed_at, content_hash) VALUES (?,?,?,?,?,?) "+
-		"ON CONFLICT(doc_id) DO UPDATE SET workspace_id=excluded.workspace_id, vector=excluded.vector, dim=excluded.dim, indexed_at=excluded.indexed_at, content_hash=excluded.content_hash",
-		docID, ws, js(c.vector), semanticDim, now(), hash)
+	dense := ""
+	dim := semanticDim
+	if a.semanticDenseEnabled() {
+		if vecs := a.semanticDenseVectors([]string{str(d["title"]) + "\n" + str(d["content"])}); vecs != nil && len(vecs) > 0 {
+			dense = js(vecs[0])
+			dim = a.embeddingConf().Dim
+		}
+	}
+	a.exec("INSERT INTO doc_embeddings (doc_id, workspace_id, vector, dense_vector, dim, indexed_at, content_hash) VALUES (?,?,?,?,?,?,?) "+
+		"ON CONFLICT(doc_id) DO UPDATE SET workspace_id=excluded.workspace_id, vector=excluded.vector, dense_vector=excluded.dense_vector, dim=excluded.dim, indexed_at=excluded.indexed_at, content_hash=excluded.content_hash",
+		docID, ws, js(c.vector), dense, dim, now(), hash)
 	// 先删除该文档旧的倒排词条，避免改稿后遗留过期 term
 	a.exec("DELETE FROM doc_terms WHERE workspace_id=? AND doc_id=?", ws, docID)
 	for _, t := range semanticDedup(c.terms) {

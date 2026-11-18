@@ -4,6 +4,37 @@
 
 ---
 
+## 追加轮次 · 2026-11-18（直连 Apache Doris，不落本地湖仓）
+
+### 背景
+真实数仓由 **Apache Doris** 构建，不需要 Hadoop 生态。用户希望产品**直接查 Doris**（走 MySQL 9030 语义端口），数据不落地到本地 DuckDB 湖仓。
+
+### 现状核查
+- 内置数据源模板 `/api/sources/templates` 已有 `id:"doris"`，「Apache Doris」warehouse 模板（默认端口 9030），但 **go.mod 原无 MySQL 驱动**，`ingest.go` 对 mysql/doris 等非 sqlite 类型只做 TCP 连通性检查，**不会真连取数**——即模板原为 UI 占位。
+- 平台唯一查询漏斗是 `internal/platform/sql.go` 的 `a.query()`，返回 `{columns, rows, row_count, ...}` 通用契约；语义指标、LLM 分析、工作流都消费它。
+
+### 实现（新增 `internal/platform/doris.go`）
+- 引入 `github.com/go-sql-driver/mysql v1.9.3`（Doris 走 MySQL wire 协议，同一驱动）。
+- `DATABUDDY_DORIS_*` 环境变量配置连接（HOST/PORT/DB/USER/PASSWORD/ENABLED），参数可后续填写、无需改码。
+- `theDoris` 惰性连接池（`dorisPool`），失败快速返回清晰中文错误。
+- `queryDoris()` 把查询扫描成 `{columns, rows, row_count, backend:"doris"}` 标准契约。
+- 新增全局只读路由（`server.go` 注册 `dorisRoutes()`）：
+  - `GET  /api/doris/test`  → 连通性 + `SELECT VERSION()` + `SHOW DATABASES`
+  - `POST /api/doris/query` → 经 `guard()` 只读校验后直连 Doris 查询，返回标准结果 + `chart`
+- **刻意不改动 `a.Lake`（DuckDB）内部机制**：质量、漂移、landing、sync、seed 仍走本地湖仓；demo 工作区不受影响。Doris 作为独立外部查询后端接入。
+
+### 验证（本机 Windows x64）
+- `CGO_ENABLED=1 go build ./...` ✅、`go vet ./internal/platform` ✅
+- 对本地 **真实 MySQL 8.4.13**（3306，Doris 同款 wire 协议）端到端测试 `go-sql-driver`：完成 TCP 连接→握手→认证协商（返回 `Error 1045 Access denied` 说明驱动正确解析服务端认证响应），链路成立。
+- 运行中新二进制：`GET /api/doris/test` 返回 `{"ok":false,"error":"Doris 未启用..."}`（未配置占位）；`/api/doris/query` 返回 400 同理由；demo `catalog/tables`（fact_orders 5200 行）不受影响 ✅。
+
+### 诚实边界（本轮）
+- **未配置真实 Doris 账号**，故端到端"查 Doris 数据"尚未用真实集群验证；连接层逻辑已用同协议 MySQL 验证。填入 `DATABUDDY_DORIS_*` 后即生效。
+- Doris 只暴露为**只读查询后端**（`/api/doris/test`、`/api/doris/query`），未挂接到 `/api/sql/run` / Catalog / 语义指标的引擎选择（那些仍走 DuckDB demo）。要做「Doris 成为默认分析引擎」需另排期：让 `query()` 按 workspace/catalog 标记路由，并处理 `qualify()` 的物理表名重写。
+- 未接 CDC / 增量 / Broker Load；仅直连查询。
+
+---
+
 ## 闭环轮次 · 2026-11-16（§6.11 缺口 1–6 全部实现）
 
 接 [docs/OSS_DIFF.md](docs/OSS_DIFF.md) §6.11.20 的优先级，把「纯本地可实现」的 6 项缺口真正落地为代码（不再是文档标注）。对应 §6.12。

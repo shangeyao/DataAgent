@@ -170,7 +170,7 @@ export async function renderOntology(page, ctx) {
           { title: '关系数', width: '80px', render: (e) => String(e.relation_count ?? 0) },
           { title: '操作', key: 'ops', width: '90px', render: (e) => `<a class="btn-link danger" data-del-ent="${esc(e.id)}">删除</a>` },
         ],
-        emptyText: '还没有实体', emptyHint: '先建「客户」「订单」这类业务对象',
+        emptyText: '还没有实体', emptyHint: '先建「产品」「晶圆厂」这类业务对象',
       });
       body.querySelector('#add-ent').addEventListener('click', () => newEntity(ctx));
       body.querySelectorAll('[data-del-ent]').forEach((b) =>
@@ -198,7 +198,7 @@ export async function renderOntology(page, ctx) {
           { title: '说明', render: (r) => `<span class="dim tiny">${esc(r.description || '-')}</span>` },
           { title: '操作', key: 'ops', width: '80px', render: (r) => `<a class="btn-link danger" data-del-rel="${esc(r.id)}">删除</a>` },
         ],
-        emptyText: '还没有关系', emptyHint: '例如「订单 隶属于 客户」（多对一）',
+        emptyText: '还没有关系', emptyHint: '例如「工单 隶属于 晶圆厂」（多对一）',
       });
       body.querySelector('#add-rel').addEventListener('click', () => newRelation(ctx, entities, ov));
       body.querySelectorAll('[data-del-rel]').forEach((b) =>
@@ -263,7 +263,7 @@ function newEntity(ctx) {
         { value: 'subject', label: '业务对象' }, { value: 'event', label: '业务事件' },
         { value: 'dimension', label: '分析维度' }, { value: 'metric_group', label: '指标集合' },
       ] },
-      { label: '绑定表', name: 'table_refs', placeholder: 'demo.retail.dim_customer（多个用逗号分隔）' },
+      { label: '绑定表', name: 'table_refs', placeholder: 'demo.semi.dim_customer（多个用逗号分隔）' },
       { label: '主键列', name: 'key_column', placeholder: 'customer_id' },
       { label: '说明', name: 'description', type: 'textarea' },
     ],
@@ -306,13 +306,13 @@ function newTerm(ctx) {
     title: '新建业务术语',
     fields: [
       { label: '术语', name: 'term', required: true, placeholder: '销售额' },
-      { label: '同义词', name: 'synonyms', placeholder: 'GMV, 成交额（逗号分隔）' },
+      { label: '同义词', name: 'synonyms', placeholder: '晶圆出货量, 出货量（逗号分隔）' },
       { label: '定义', name: 'definition', type: 'textarea' },
       { label: '资产类型', name: 'asset_type', type: 'select', options: [
         { value: 'table', label: '数据表' }, { value: 'metric', label: '指标' },
         { value: 'column', label: '字段' }, { value: 'dashboard', label: '仪表盘' },
       ] },
-      { label: '资产引用', name: 'asset_ref', placeholder: 'gmv 或 demo.retail.fact_orders' },
+      { label: '资产引用', name: 'asset_ref', placeholder: 'wafer_out 或 demo.semi.fact_wafer_out' },
     ],
     onSubmit: async (d) => {
       await api.post('/glossary', {

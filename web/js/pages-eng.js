@@ -42,15 +42,15 @@ export async function renderStudio(page, ctx) {
             <button class="btn sm primary" id="run">运行</button>
           </div>
           <div style="padding:16px">
-            <textarea id="code" rows="12" class="mono" style="font-family:var(--mono);font-size:12.5px;min-height:220px">-- 每日 GMV 汇总：按渠道拆分
+            <textarea id="code" rows="12" class="mono" style="font-family:var(--mono);font-size:12.5px;min-height:220px">-- 每日晶圆产出汇总：按制程节点拆分
 SELECT
-  o.order_date,
-  c.channel_name,
-  round(sum(o.amount), 2) AS gmv,
-  count(DISTINCT o.order_id) AS order_cnt
-FROM demo.retail.fact_orders o
-JOIN demo.retail.dim_channel c ON c.channel_id = o.channel_id
-WHERE o.order_date >= DATE '2026-11-01'
+  o.wip_date,
+  p.process_node,
+  sum(o.lot_quantity) AS wafer_out,
+  round(sum(o.revenue), 2) AS revenue
+FROM demo.semi.fact_wafer_out o
+JOIN demo.semi.dim_product p ON p.product_id = o.product_id
+WHERE o.wip_date >= DATE '2026-11-01'
 GROUP BY 1, 2
 ORDER BY 1, 3 DESC</textarea>
           </div>
@@ -78,7 +78,7 @@ ORDER BY 1, 3 DESC</textarea>
       title: 'AI 代码助手',
       body: `<div class="col" style="gap:12px">
         <div class="tiny muted">Buddy 已关联当前文件与运行历史，可直接提问或让它改代码。</div>
-        <textarea rows="4" placeholder="例如：把日期过滤改成参数化，并加上退款单剔除"></textarea>
+        <textarea rows="4" placeholder="例如：把日期过滤改成参数化，并支持按晶圆厂/客户行业拆分"></textarea>
         <div class="row"><button class="btn primary sm" onclick="location.hash='#/buddy'">到 Buddy 继续 →</button></div>
       </div>`,
       actions: [{ label: '关闭' }],
@@ -98,8 +98,8 @@ ORDER BY 1, 3 DESC</textarea>
       n.classList.add('active');
       page.querySelector('.tbl-toolbar .title').textContent = n.dataset.file;
       ta.value = n.dataset.file.endsWith('.py')
-        ? `import duckdb\n\ncon = duckdb.connect('data/warehouse.duckdb')\ndf = con.sql("SELECT * FROM demo__retail.fact_orders LIMIT 100").df()\nprint(df.head())`
-        : `SELECT * FROM demo.retail.${n.dataset.file.replace('.sql', '')} LIMIT 100`;
+        ? `import duckdb\n\ncon = duckdb.connect('data/warehouse.duckdb')\ndf = con.sql("SELECT * FROM demo__semi.fact_wafer_out LIMIT 100").df()\nprint(df.head())`
+        : `SELECT * FROM demo.semi.${n.dataset.file.replace('.sql', '')} LIMIT 100`;
     })
   );
   run();
@@ -236,7 +236,7 @@ async function newFlow(ctx) {
       { label: '描述', name: 'description' },
       { label: '调度 cron', name: 'cron', placeholder: '0 7 * * *', hint: '5 段表达式，留空则只支持手动触发' },
       { label: '节点（每行：名称 | SQL）', name: 'nodes', type: 'textarea', rows: 6,
-        value: '汇总 | SELECT order_date, sum(amount) gmv FROM demo.retail.fact_orders GROUP BY 1\n校验 | SELECT count(*) FROM demo.retail.fact_orders WHERE amount IS NULL',
+        value: '汇总 | SELECT wip_date, sum(lot_quantity) wafer_out FROM demo.semi.fact_wafer_out GROUP BY 1\n校验 | SELECT count(*) FROM demo.semi.fact_wafer_out WHERE yield_pct > 100',
         hint: '按顺序串成 DAG；第二个节点起为质量断言，返回值需为 0' },
     ],
     onSubmit: async (d) => {
@@ -256,21 +256,21 @@ export async function renderCicd(page, ctx) {
   page.innerHTML = `
     <div class="grid-2" style="grid-template-columns:1fr 380px;align-items:start">
       <div class="col" style="gap:16px">
-        ${card('bundle.yaml', `<textarea id="yaml" rows="16" class="mono" style="font-family:var(--mono);font-size:12.5px;min-height:300px">bundle: retail-dw
+        ${card('bundle.yaml', `<textarea id="yaml" rows="16" class="mono" style="font-family:var(--mono);font-size:12.5px;min-height:300px">bundle: semi-dw
 targets:
   dev:
-    workspace: 零售数据智能
+    workspace: 半导体数仓智能
   prod:
-    workspace: 零售数据智能
+    workspace: 半导体数仓智能
 resources:
   flows:
-    - name: 每日经营数据刷新
+    - name: 每日晶圆产出刷新
       schedule: "0 7 * * *"
   metrics:
-    - gmv
-    - order_cnt
+    - wafer_out
+    - yield_rate
   dashboards:
-    - 零售经营总览
+    - 晶圆良率总览
 </textarea>
           <div class="row mt-12">
             <button class="btn" id="validate">校验 bundle</button>

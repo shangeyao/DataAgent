@@ -383,8 +383,15 @@ func (a *App) executeNodeLoop(ws string, f, run M, n M, params, outputs M, depth
 		}
 		out = a.runFlow(ws, f, params, "subflow", depth+1)
 	case "notify":
-		a.audit(ws, "", "workflow_notify", js(cfg))
-		out = M{"simulated": true, "title": cfg["title"], "message": cfg["message"]}
+		// Real delivery: route through the same alert pipeline as other events,
+		// so configured channels receive the node's title/message. Falls back to
+		// the workspace notify config when no alert rule matches (see a.emit).
+		title := str(def(cfg, "title", "工作流通知"))
+		message := str(def(cfg, "message", title))
+		severity := str(def(cfg, "severity", "info"))
+		result := a.emit(ws, M{"event": "workflow_notify", "subject": title, "message": message, "severity": severity, "force": true})
+		a.audit(ws, "", "workflow_notify", js(M{"title": title, "message": message, "deliveries": result["total"]}))
+		out = M{"title": title, "message": message, "deliveries": result["deliveries"], "total": result["total"], "simulated": result["simulated"]}
 	case "approval":
 		if !boolOf(params["confirm_"+str(n["id"])]) {
 			out = M{"status": "waiting", "reason": cfg["reason"]}

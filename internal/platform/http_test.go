@@ -68,7 +68,7 @@ func TestHTTPAcceptance(t *testing.T) {
 	login := call("POST", "/auth/login", M{"email": "admin@local", "password": "admin123"}, 200)
 	token = str(login["token"])
 	ws = str(obj(arr(login["workspaces"])[0])["id"])
-	for _, path := range []string{"/health", "/capabilities", "/auth/me", "/workspaces", "/users", "/settings", "/settings/tools", "/settings/integrations", "/ops/audit", "/ops/traces", "/catalog/tree", "/catalog/tree-ext", "/catalog/tables", "/catalog/table?ref=demo.retail.fact_orders", "/catalog/preview?ref=demo.retail.fact_orders", "/catalog/models", "/sources", "/sources/templates", "/ingest/plans", "/metrics", "/knowledge", "/memory", "/conversations", "/flows", "/workflows", "/workflow-meta", "/workflow-schedule", "/bundles", "/bundles/template", "/models", "/registry/models", "/registry/summary", "/serving/services", "/features", "/features/summary", "/features/by-table?table_ref=demo.retail.fact_orders", "/compute-resources", "/agents", "/buddy-tasks", "/buddy-runs", "/analysis-spaces", "/dashboards", "/quality/rules", "/quality/rules/export", "/quality/summary", "/quality/meta", "/profiling/modes", "/profiling/baselines", "/drift/metrics", "/anomalies", "/notebooks", "/notebooks/magic-help", "/volumes", "/functions", "/external-catalogs", "/lineage/summary", "/lineage/edges", "/lineage/graph?table_ref=demo.retail.fact_orders", "/lineage/impact?table_ref=demo.retail.fact_orders", "/alerts/meta", "/alerts/channels", "/alerts/rules", "/alerts/deliveries", "/ops/levels", "/ops/overview", "/ops/diagnose", "/ops/tree-flat", "/security/policy", "/security/owasp", "/analysis/meta", "/reports", "/report-schedules", "/ontology/overview", "/ontology/entities", "/ontology/relations", "/ontology/graph", "/glossary", "/glossary/resolve?q=GMV", "/console/workspaces", "/usage"} {
+	for _, path := range []string{"/health", "/capabilities", "/auth/me", "/workspaces", "/users", "/settings", "/settings/tools", "/settings/integrations", "/ops/audit", "/ops/traces", "/catalog/tree", "/catalog/tree-ext", "/catalog/tables", "/catalog/table?ref=demo.semi.fact_wafer_out", "/catalog/preview?ref=demo.semi.fact_wafer_out", "/catalog/models", "/sources", "/sources/templates", "/ingest/plans", "/metrics", "/knowledge", "/memory", "/conversations", "/flows", "/workflows", "/workflow-meta", "/workflow-schedule", "/bundles", "/bundles/template", "/models", "/registry/models", "/registry/summary", "/serving/services", "/features", "/features/summary", "/features/by-table?table_ref=demo.semi.fact_wafer_out", "/compute-resources", "/agents", "/buddy-tasks", "/buddy-runs", "/analysis-spaces", "/dashboards", "/quality/rules", "/quality/rules/export", "/quality/summary", "/quality/meta", "/profiling/modes", "/profiling/baselines", "/drift/metrics", "/anomalies", "/notebooks", "/notebooks/magic-help", "/volumes", "/functions", "/external-catalogs", "/lineage/summary", "/lineage/edges", "/lineage/graph?table_ref=demo.semi.fact_wafer_out", "/lineage/impact?table_ref=demo.semi.fact_wafer_out", "/alerts/meta", "/alerts/channels", "/alerts/rules", "/alerts/deliveries", "/ops/levels", "/ops/overview", "/ops/diagnose", "/ops/tree-flat", "/security/policy", "/security/owasp", "/analysis/meta", "/reports", "/report-schedules", "/ontology/overview", "/ontology/entities", "/ontology/relations", "/ontology/graph", "/glossary", "/glossary/resolve?q=GMV", "/console/workspaces", "/usage"} {
 		t.Run("GET "+path, func(t *testing.T) { call("GET", path, nil, 200) })
 	}
 	compute := call("GET", "/compute-resources", nil, 200)
@@ -83,30 +83,30 @@ func TestHTTPAcceptance(t *testing.T) {
 	if len(obj(ontology["kinds"])) != 4 {
 		t.Fatal("ontology renderer contract", ontology)
 	}
-	detail := call("GET", "/catalog/table?ref=fact_orders", nil, 200)
+	detail := call("GET", "/catalog/table?ref=fact_wafer_out", nil, 200)
 	if len(arr(obj(detail["table"])["columns"])) == 0 {
 		t.Fatal("table renderer contract", detail)
 	}
-	call("POST", "/sql/run", M{"sql": "SELECT channel_name, count(*) FROM dim_channel GROUP BY 1", "limit": 3}, 200)
-	ask := call("POST", "/analysis/ask", M{"question": "渠道GMV"}, 200)
+	call("POST", "/sql/run", M{"sql": "SELECT fab_name, count(*) FROM dim_fab GROUP BY 1", "limit": 3}, 200)
+	ask := call("POST", "/analysis/ask", M{"question": "各晶圆厂晶圆出货量"}, 200)
 	if num(ask["row_count"]) != 5 {
 		t.Fatal(ask)
 	}
-	call("POST", "/analysis/attribute", M{"metric": "gmv", "dimension": "channel_name", "period": "last_month"}, 200)
+	call("POST", "/analysis/attribute", M{"metric": "revenue", "dimension": "fab_name", "period": "last_month"}, 200)
 	report := call("POST", "/analysis/report/generate", M{"topic": "验收报告"}, 200)
 	if len(arr(report["sections"])) != 4 {
 		t.Fatal(report)
 	}
-	profile := call("POST", "/profiling/profile", M{"table_ref": "fact_orders", "save_baseline": true}, 200)
+	profile := call("POST", "/profiling/profile", M{"table_ref": "fact_wafer_out", "save_baseline": true}, 200)
 	if _, ok := profile["columns"].([]any); !ok {
 		t.Fatal("profile columns must be a list")
 	}
-	drift := call("POST", "/drift/detect", M{"table_ref": "fact_orders", "column": "amount", "metric": "ks"}, 200)
+	drift := call("POST", "/drift/detect", M{"table_ref": "fact_wafer_out", "column": "revenue", "metric": "ks"}, 200)
 	if num(drift["score"]) != 0 {
 		t.Fatal("same data must not drift", drift)
 	}
 	call("POST", "/quality/rules/run-all", M{}, 200)
-	suggest := call("GET", "/quality/suggest?table=demo.retail.dim_channel", nil, 200)
+	suggest := call("GET", "/quality/suggest?table=demo.semi.dim_fab", nil, 200)
 	items := arr(suggest["rules"])
 	if len(items) == 0 || str(obj(items[0])["reason"]) == "" {
 		t.Fatal("quality suggestion contract", suggest)
@@ -119,7 +119,7 @@ func TestHTTPAcceptance(t *testing.T) {
 	if strings.Contains(str(masked["text"]), "13800138000") {
 		t.Fatal(masked)
 	}
-	flow := obj(call("POST", "/workflows", M{"name": "HTTP DAG", "nodes": []M{{"id": "sql", "type": "sql", "config": M{"sql": "SELECT count(*) FROM fact_orders"}}}}, 200)["workflow"])
+	flow := obj(call("POST", "/workflows", M{"name": "HTTP DAG", "nodes": []M{{"id": "sql", "type": "sql", "config": M{"sql": "SELECT count(*) FROM fact_wafer_out"}}}}, 200)["workflow"])
 	run := obj(call("POST", "/workflows/"+str(flow["id"])+"/run", M{}, 200)["run"])
 	if run["status"] != "success" {
 		t.Fatal(run)
@@ -153,23 +153,23 @@ func TestHTTPAcceptance(t *testing.T) {
 	if num(traffic["v1"]) != 25 || num(traffic["v2"]) != 75 {
 		t.Fatal(traffic)
 	}
-	feature := obj(call("POST", "/features", M{"name": "customer_spend", "entity": "customer", "dtype": "float", "expr": "sum(amount)", "table_ref": "fact_orders"}, 200)["feature"])
+	feature := obj(call("POST", "/features", M{"name": "customer_revenue", "entity": "customer", "dtype": "float", "expr": "sum(revenue)", "table_ref": "fact_wafer_out"}, 200)["feature"])
 	fid := str(feature["id"])
-	call("PATCH", "/features/"+fid, M{"expr": "sum(amount)*2"}, 200)
+	call("PATCH", "/features/"+fid, M{"expr": "sum(revenue)*2"}, 200)
 	versions := call("GET", "/features/"+fid+"/versions", nil, 200)
 	if len(arr(versions["versions"])) != 2 {
 		t.Fatal("feature revisions missing", versions)
 	}
-	computed := call("POST", "/features/compute", M{"names": []string{"customer_spend"}, "materialize": true}, 200)
+	computed := call("POST", "/features/compute", M{"names": []string{"customer_revenue"}, "materialize": true}, 200)
 	if num(computed["count"]) != 1 {
 		t.Fatal(computed)
 	}
-	training := call("POST", "/features/training-set", M{"feature_names": []string{"customer_spend"}, "label_expr": "max(amount)", "materialize": true, "name": "http_training"}, 200)
+	training := call("POST", "/features/training-set", M{"feature_names": []string{"customer_revenue"}, "label_expr": "max(revenue)", "materialize": true, "name": "http_training"}, 200)
 	if num(training["row_count"]) == 0 {
 		t.Fatal(training)
 	}
 	conv := obj(call("POST", "/conversations", M{}, 200)["conversation"])
-	call("POST", "/conversations/"+str(conv["id"])+"/messages", M{"content": "渠道GMV"}, 200)
+	call("POST", "/conversations/"+str(conv["id"])+"/messages", M{"content": "工厂晶圆出货量"}, 200)
 	var payload bytes.Buffer
 	writer := multipart.NewWriter(&payload)
 	part, e := writer.CreateFormFile("file", "native.csv")
@@ -177,7 +177,7 @@ func TestHTTPAcceptance(t *testing.T) {
 		t.Fatal(e)
 	}
 	io.WriteString(part, "id,value\n1,10\n2,20\n")
-	writer.WriteField("target", "demo.retail")
+	writer.WriteField("target", "demo.semi")
 	writer.WriteField("table", "http_upload")
 	writer.Close()
 	req, e := http.NewRequest("POST", base+"/api/ingest/upload", &payload)
@@ -200,7 +200,7 @@ func TestHTTPAcceptance(t *testing.T) {
 	if num(preview["row_count"]) != 2 {
 		t.Fatal(preview)
 	}
-	mcp := call("POST", "/mcp", M{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": M{"name": "run_query", "arguments": M{"sql": "SELECT count(*) FROM fact_orders"}}}, 200)
+	mcp := call("POST", "/mcp", M{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": M{"name": "run_query", "arguments": M{"sql": "SELECT count(*) FROM fact_wafer_out"}}}, 200)
 	if !strings.Contains(js(mcp), "5200") {
 		t.Fatal(mcp)
 	}
@@ -283,14 +283,14 @@ func TestHTTPNewCapabilities(t *testing.T) {
 	db.Close()
 
 	source := obj(call("POST", "/sources", M{"name": "HTTP 源", "type": "sqlite", "config": M{"path": sourcePath}}, 200)["source"])
-	task := obj(call("POST", "/sync/tasks", M{"name": "HTTP 同步", "source_id": str(source["id"]), "target": "demo.retail", "mode": "full", "enabled": true}, 200)["task"])
+	task := obj(call("POST", "/sync/tasks", M{"name": "HTTP 同步", "source_id": str(source["id"]), "target": "demo.semi", "mode": "full", "enabled": true}, 200)["task"])
 	run := obj(call("POST", "/sync/tasks/"+str(task["id"])+"/run", M{}, 200)["run"])
 	if str(run["status"]) != "success" || num(run["total_rows"]) != 2 {
 		t.Fatal(run)
 	}
 	call("GET", "/sync/tasks", nil, 200)
 
-	exported := call("POST", "/ingest/egress", M{"table": "demo.retail.http_demo", "format": "csv"}, 200)
+	exported := call("POST", "/ingest/egress", M{"table": "demo.semi.http_demo", "format": "csv"}, 200)
 	if exported["ok"] != true || str(exported["path"]) == "" {
 		t.Fatal(exported)
 	}
@@ -306,7 +306,7 @@ func TestHTTPNewCapabilities(t *testing.T) {
 		t.Fatal(reconciled)
 	}
 
-	model := obj(call("POST", "/registry/models", M{"name": "http-predict", "artifact_uri": "sql:SELECT count(*) AS n FROM demo.retail.fact_orders"}, 200)["model"])
+	model := obj(call("POST", "/registry/models", M{"name": "http-predict", "artifact_uri": "sql:SELECT count(*) AS n FROM demo.semi.fact_wafer_out"}, 200)["model"])
 	service := obj(call("POST", "/serving/services", M{"name": "http-predict-service", "model_ref": str(model["id"]), "version": "v1"}, 200)["service"])
 	predicted := call("POST", "/serving/services/"+str(service["id"])+"/predict", M{}, 200)
 	predictedRows := arr(predicted["rows"])
@@ -329,7 +329,7 @@ func TestHTTPNewCapabilities(t *testing.T) {
 	call("GET", "/grants/meta", nil, 200)
 	call("GET", "/grants", nil, 200)
 	gr := obj(call("POST", "/grants", M{"subject_type": "role", "subject": "admin", "object_ref": "*", "actions": []any{"select"}, "effect": "allow"}, 200)["grant"])
-	call("POST", "/grants/check", M{"object_ref": "demo.retail.fact_orders", "action": "select"}, 200)
+	call("POST", "/grants/check", M{"object_ref": "demo.semi.fact_wafer_out", "action": "select"}, 200)
 	call("DELETE", "/grants/"+str(gr["id"]), nil, 200)
 	call("POST", "/knowledge/index", M{}, 200)
 	call("GET", "/knowledge/semantic?q=GMV", nil, 200)
@@ -341,7 +341,7 @@ func TestHTTPNewCapabilities(t *testing.T) {
 	}
 	call("DELETE", "/serving/tokens/"+str(obj(tk["token"])["id"]), nil, 200)
 	call("GET", "/catalog/evolutions", nil, 200)
-	call("POST", "/catalog/evolve", M{"table_ref": "demo.retail.fact_orders"}, 200)
+	call("POST", "/catalog/evolve", M{"table_ref": "demo.semi.fact_wafer_out"}, 200)
 
 	eventFlow := obj(call("POST", "/workflows", M{"name": "HTTP 事件流", "nodes": []M{{"id": "sql", "type": "sql", "config": M{"sql": "SELECT 1"}}}, "run_mode": "event", "enabled": true}, 200)["workflow"])
 	key := str(eventFlow["trigger_key"])
@@ -374,7 +374,7 @@ func TestProviderApprovalRecovery(t *testing.T) {
 		calls++
 		w.Header().Set("Content-Type", "application/json")
 		if calls == 1 {
-			json.NewEncoder(w).Encode(M{"choices": []M{{"message": M{"role": "assistant", "content": "", "tool_calls": []M{{"id": "read-first", "type": "function", "function": M{"name": "list_tables", "arguments": "{}"}}, {"id": "write-next", "type": "function", "function": M{"name": "apply_tags", "arguments": `{"table":"demo.retail.dim_customer"}`}}}}}}})
+			json.NewEncoder(w).Encode(M{"choices": []M{{"message": M{"role": "assistant", "content": "", "tool_calls": []M{{"id": "read-first", "type": "function", "function": M{"name": "list_tables", "arguments": "{}"}}, {"id": "write-next", "type": "function", "function": M{"name": "apply_tags", "arguments": `{"table":"demo.semi.dim_customer"}`}}}}}}})
 		} else {
 			json.NewEncoder(w).Encode(M{"choices": []M{{"message": M{"role": "assistant", "content": "处理完成。手机号 13800138000"}}}})
 		}
@@ -382,6 +382,13 @@ func TestProviderApprovalRecovery(t *testing.T) {
 	defer provider.Close()
 	a.setSetting("llm.base_url", provider.URL)
 	a.setSetting("llm.api_key", "local-test-key")
+	// Mark a sensitive (L3) column on dim_customer so that the write tool
+	// (apply_tags) against it requires human approval. In the semi schema the
+	// shipped column tags are L1/L2 only, so we seed an L3 tag here to exercise
+	// the approval-recovery path.
+	dc := a.resolve(ws, "demo.semi.dim_customer")
+	dccol := a.row("SELECT id FROM columns WHERE table_id=? ORDER BY ordinal LIMIT 1", dc["id"])
+	a.exec("INSERT INTO column_tags(id,column_id,tag,level,source,confidence,evidence,created_at) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(column_id,tag) DO UPDATE SET level=excluded.level", id(), dccol["id"], "客户名单", "L3", "manual", 1, "审批恢复测试", now())
 	conv := a.insert("conversations", M{"id": id(), "workspace_id": ws, "user_id": u["id"], "mode": "governance", "chat_mode": "agent", "created_at": now()})
 	c := &request{A: a, WS: ws, User: publicUser(u)}
 	first := a.agentLoop(c, str(conv["id"]), M{"messages": []any{M{"role": "user", "content": "扫描敏感字段并打标签"}}, "trace": []any{}, "artifacts": []any{}}, false)

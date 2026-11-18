@@ -663,11 +663,14 @@ CREATE TABLE IF NOT EXISTS predict_tokens (
     last_used_at TEXT DEFAULT ''
 );
 
--- P2-7 语义检索：文档 embedding 与倒排词条索引（本地哈希向量，无外部模型）
+-- P2-7 语义检索：文档 embedding 与倒排词条索引
+-- vector 存本地哈希稀疏向量 [[idx,weight],...]；dense_vector 存外部模型
+-- （如 bge-m3，1024 维）的稠密向量。配置了 Embedding 服务时优先用稠密向量。
 CREATE TABLE IF NOT EXISTS doc_embeddings (
     doc_id TEXT PRIMARY KEY,
     workspace_id TEXT NOT NULL,
     vector TEXT DEFAULT '[]',             -- JSON: 归一化后的稀疏向量 [[idx,weight],...]
+    dense_vector TEXT DEFAULT '',         -- JSON: 外部 embedding 稠密向量，空表示未生成
     dim INTEGER DEFAULT 256,
     indexed_at TEXT NOT NULL,
     content_hash TEXT DEFAULT ''

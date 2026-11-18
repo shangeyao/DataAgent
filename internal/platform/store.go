@@ -311,6 +311,11 @@ func Open(root, dir string) (app *App, err error) {
 		}
 	}
 	// Additive migrations preserve all existing SQLite data.
+	// Dense vector column for external embedding models (bge-m3 etc.).
+	if !a.columns["doc_embeddings"]["dense_vector"] {
+		a.exec("ALTER TABLE doc_embeddings ADD COLUMN dense_vector TEXT DEFAULT ''")
+		a.columns["doc_embeddings"]["dense_vector"] = true
+	}
 	for table, cols := range migrations {
 		for name, decl := range cols {
 			if !a.columns[table][name] {
@@ -385,14 +390,17 @@ func (a *App) bootstrap() {
 		stmt, e := tx.Prepare("INSERT INTO " + table + " VALUES (" + strings.Join(qs, ",") + ")")
 		must(e)
 		for _, r := range t.Rows {
-			if t.Name == "fact_orders" {
+			// Keep any fact-table DATE column "fresh" relative to today so the
+			// demo dataset always shows a near-recent time window regardless of
+			// when the seed was generated.
+			if strings.HasPrefix(t.Name, "fact_") {
 				anchor, _ := time.Parse("2006-01-02", "2026-11-10")
 				loc, _ := time.LoadLocation("Asia/Shanghai")
 				nowLocal := time.Now().In(loc)
 				today, _ := time.Parse("2006-01-02", nowLocal.Format("2006-01-02"))
 				days := int(today.Sub(anchor).Hours() / 24)
 				for i, c := range t.Columns {
-					if c.Name == "order_date" {
+					if c.Type == "DATE" {
 						if d, err := time.Parse("2006-01-02", str(r[i])); err == nil {
 							r[i] = d.AddDate(0, 0, days).Format("2006-01-02")
 						}

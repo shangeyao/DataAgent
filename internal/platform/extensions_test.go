@@ -90,7 +90,7 @@ func TestTableEvolutionRejectsUnsafeType(t *testing.T) {
 func TestDriftRecordsEvolutionEvent(t *testing.T) {
 	a := testApp(t)
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
-	out := a.triggerEvolutionFromDrift(ws, "demo.retail.fact_orders", "字段数量由 3 变为 4")
+	out := a.triggerEvolutionFromDrift(ws, "demo.semi.fact_wafer_out", "字段数量由 3 变为 4")
 	if !boolOf(out["recorded"]) || str(out["trigger"]) != "drift" || num(out["auto_columns_added"]) != 0 {
 		t.Fatal(out)
 	}
@@ -241,38 +241,38 @@ func TestGrantPolicyEvaluationAndEnforcement(t *testing.T) {
 	if a.hasAnyGrant(ws) {
 		t.Fatal("fresh install must have no grants")
 	}
-	if got := a.enforceReadGrant(ws, user, "SELECT * FROM fact_orders"); got != "SELECT * FROM fact_orders" {
+	if got := a.enforceReadGrant(ws, user, "SELECT * FROM fact_wafer_out"); got != "SELECT * FROM fact_wafer_out" {
 		t.Fatal("compat mode changed the query", got)
 	}
-	if !boolOf(a.checkGrant(ws, user, M{"object_ref": "demo.retail.fact_orders", "action": "select"})["allowed"]) {
+	if !boolOf(a.checkGrant(ws, user, M{"object_ref": "demo.semi.fact_wafer_out", "action": "select"})["allowed"]) {
 		t.Fatal("compat mode should allow")
 	}
 
 	// 显式 deny 覆盖 allow
-	a.createGrant(ws, M{"subject_type": "role", "subject": "member", "object_ref": "demo.retail.fact_orders", "actions": []any{"select"}, "effect": "allow"})
-	a.createGrant(ws, M{"subject_type": "user", "subject": "u-member", "object_ref": "demo.retail.fact_orders", "actions": []any{"select"}, "effect": "deny"})
-	res := a.checkGrant(ws, user, M{"object_ref": "demo.retail.fact_orders", "action": "select"})
+	a.createGrant(ws, M{"subject_type": "role", "subject": "member", "object_ref": "demo.semi.fact_wafer_out", "actions": []any{"select"}, "effect": "allow"})
+	a.createGrant(ws, M{"subject_type": "user", "subject": "u-member", "object_ref": "demo.semi.fact_wafer_out", "actions": []any{"select"}, "effect": "deny"})
+	res := a.checkGrant(ws, user, M{"object_ref": "demo.semi.fact_wafer_out", "action": "select"})
 	if boolOf(res["allowed"]) || !strings.Contains(str(res["reason"]), "拒绝") {
 		t.Fatal("deny must win", res)
 	}
-	catches(t, 403, func() { a.enforceReadGrant(ws, user, "SELECT * FROM demo.retail.fact_orders") })
+	catches(t, 403, func() { a.enforceReadGrant(ws, user, "SELECT * FROM demo.semi.fact_wafer_out") })
 
 	// 行级谓词：无行数据时返回待注入谓词，并改写查询
 	a.exec("DELETE FROM grants WHERE workspace_id=?", ws)
-	gr := a.createGrant(ws, M{"subject_type": "user", "subject": "u-member", "object_ref": "demo.retail.fact_orders", "actions": []any{"select"}, "row_predicate": "channel_name = 'app'", "effect": "allow"})
-	if str(gr["row_predicate"]) != "channel_name = 'app'" {
+	gr := a.createGrant(ws, M{"subject_type": "user", "subject": "u-member", "object_ref": "demo.semi.fact_wafer_out", "actions": []any{"select"}, "row_predicate": "fab_name = 'FabA'", "effect": "allow"})
+	if str(gr["row_predicate"]) != "fab_name = 'FabA'" {
 		t.Fatal(gr)
 	}
-	filtered := a.checkGrant(ws, user, M{"object_ref": "demo.retail.fact_orders", "action": "select"})
+	filtered := a.checkGrant(ws, user, M{"object_ref": "demo.semi.fact_wafer_out", "action": "select"})
 	if !boolOf(filtered["row_filter_required"]) || len(arr(filtered["row_predicates"])) != 1 {
 		t.Fatal("row predicate not surfaced", filtered)
 	}
-	rewritten := a.enforceReadGrant(ws, user, "SELECT * FROM demo.retail.fact_orders")
-	if !strings.Contains(rewritten, "_grant_src") || !strings.Contains(rewritten, "channel_name = 'app'") {
+	rewritten := a.enforceReadGrant(ws, user, "SELECT * FROM demo.semi.fact_wafer_out")
+	if !strings.Contains(rewritten, "_grant_src") || !strings.Contains(rewritten, "fab_name = 'FabA'") {
 		t.Fatal("query not rewritten with row filter", rewritten)
 	}
 	// 带行数据的求值：命中/不命中谓词
-	if !boolOf(a.checkGrant(ws, user, M{"object_ref": "demo.retail.fact_orders", "action": "select", "row": M{"channel_name": "app"}})["allowed"]) {
+	if !boolOf(a.checkGrant(ws, user, M{"object_ref": "demo.semi.fact_wafer_out", "action": "select", "row": M{"fab_name": "FabA"}})["allowed"]) {
 		t.Fatal("matching row should be allowed")
 	}
 

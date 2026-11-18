@@ -18,11 +18,11 @@ const TABS = [
 ];
 
 const EXAMPLES = [
-  '上个月各渠道GMV',
-  '近 30 天 GMV 趋势',
-  '上月各品类订单量',
-  '上个月各城市成交客户数',
-  '上月各渠道退款率',
+  '上个月各晶圆厂晶圆出货量',
+  '近 30 天综合良率趋势',
+  '上月各制程节点良率',
+  '上个月各区域出货客户数',
+  '上月各客户行业营收',
 ];
 
 // styles.css 里只有 .stat .foot .up/.down 有配色，表格内用行内样式，避免改别人的样式文件
@@ -186,7 +186,7 @@ function renderAsk(host, meta) {
         <span class="tag outline">指标路径优先</span>
       </div>
       <div class="row" style="gap:8px">
-        <input id="ask-q" class="grow" placeholder="例如：上个月各渠道GMV"
+        <input id="ask-q" class="grow" placeholder="例如：上个月各晶圆厂晶圆出货量"
           style="flex:1;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:4px;font-size:13px" />
         <select id="ask-period" style="height:36px;padding:0 8px;border:1px solid var(--border);border-radius:4px">
           <option value="">自动识别时间</option>
@@ -420,7 +420,7 @@ function renderReports(host, meta, ctx) {
         <button class="btn primary sm" id="rp-new">＋ 生成新报告</button>
       </div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
-        <input id="rp-topic" placeholder="报告主题，如 零售经营分析"
+        <input id="rp-topic" placeholder="报告主题，如 晶圆良率分析"
           style="flex:1;min-width:200px;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:4px;font-size:13px" />
         <select id="rp-period" style="height:36px;padding:0 8px;border:1px solid var(--border);border-radius:4px">
           ${(meta.periods || []).map((p) => `<option value="${esc(p.value)}"${p.value === 'last_month' ? ' selected' : ''}>${esc(p.label)}</option>`).join('')}
@@ -727,7 +727,7 @@ function quickReport(meta, ctx) {
     title: '新建报告',
     wide: true,
     fields: [
-      { label: '报告主题', name: 'topic', required: true, placeholder: '例如 零售经营分析' },
+      { label: '报告主题', name: 'topic', required: true, placeholder: '例如 晶圆良率分析' },
       {
         label: '统计周期', name: 'period', type: 'select', value: 'last_month',
         options: (meta.periods || []).map((p) => ({ value: p.value, label: p.label })),
@@ -765,7 +765,7 @@ function renderDashboardGen(host, meta, ctx) {
         <span class="tag outline">预跑真实数据</span>
       </div>
       <div class="row" style="gap:8px">
-        <input id="bd-p" placeholder="例如：做一个渠道GMV看板"
+        <input id="bd-p" placeholder="例如：做一个晶圆厂营收看板"
           style="flex:1;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:4px;font-size:13px" />
         <select id="bd-period" style="height:36px;padding:0 8px;border:1px solid var(--border);border-radius:4px">
           ${(meta.periods || []).map((p) => `<option value="${esc(p.value)}"${p.value === 'last_month' ? ' selected' : ''}>${esc(p.label)}</option>`).join('')}
@@ -774,7 +774,7 @@ function renderDashboardGen(host, meta, ctx) {
       </div>
       <div class="row mt-12" style="gap:6px;flex-wrap:wrap">
         <span class="dim tiny">试试：</span>
-        ${['做一个渠道GMV看板', '各品类订单量看板', '渠道客单价看板', '城市成交客户数看板'].map((q) =>
+        ${['做一个晶圆厂产出看板', '各制程节点良率看板', '客户营收看板', '各区域出货客户数看板'].map((q) =>
           `<button class="btn sm ghost" data-bd-example="${esc(q)}">${esc(q)}</button>`).join('')}
       </div>
     </div>
@@ -812,7 +812,7 @@ function renderDashboardGen(host, meta, ctx) {
     renderBoardPreview(out, res, ctx);
   }
 
-  input.value = '做一个渠道GMV看板';
+  input.value = '做一个晶圆厂产出看板';
   run();
 }
 

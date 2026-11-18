@@ -2,10 +2,7 @@ package platform
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -340,30 +337,25 @@ func (a *App) invoke(c *request, conv, name string, args M) (out M) {
 	}
 }
 func (a *App) provider(ctx context.Context, messages []any, tools any) M {
-	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
-	defer cancel()
 	body := M{"model": a.llm("model", "deepseek-chat"), "messages": messages, "temperature": 0.3}
+	// Reasoning models (e.g. qwen3.6) put a long chain-of-thought in a separate
+	// "reasoning" field and can consume the whole token budget before emitting
+	// content. Allow disabling thinking and raising max_tokens via settings/.env.
+	if maxTokens := int(num(a.modelSetting("llm.max_tokens", "LLM_MAX_TOKENS", "0"))); maxTokens > 0 {
+		body["max_tokens"] = maxTokens
+	}
+	if strings.EqualFold(strings.TrimSpace(a.modelSetting("llm.enable_thinking", "LLM_ENABLE_THINKING", "")), "false") {
+		body["chat_template_kwargs"] = M{"enable_thinking": false}
+	}
 	if tools != nil {
 		body["tools"] = tools
 	}
-	req, e := http.NewRequestWithContext(ctx, "POST", strings.TrimRight(a.llm("base_url", "https://api.deepseek.com/v1"), "/")+"/chat/completions", strings.NewReader(js(body)))
-	must(e)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+a.llm("api_key", ""))
-	resp, e := http.DefaultClient.Do(req)
-	if e != nil {
-		fail(502, "模型服务连接失败")
+	conf := modelConf{
+		BaseURL: strings.TrimRight(a.llm("base_url", "https://api.deepseek.com/v1"), "/"),
+		Model:   str(body["model"]),
+		APIKey:  a.llm("api_key", ""),
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		fail(502, fmt.Sprintf("模型服务返回 HTTP %d", resp.StatusCode))
-	}
-	b, e := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
-	must(e)
-	var out M
-	if e = json.Unmarshal(b, &out); e != nil {
-		fail(502, "模型响应不是有效 JSON")
-	}
+	out := modelPost(ctx, conf, "/chat/completions", body, 180*time.Second)
 	if len(arr(out["choices"])) == 0 {
 		fail(502, "模型没有返回回答")
 	}
@@ -519,7 +511,13 @@ func (a *App) agentRoutes() []route {
 		{"POST", "/api/settings/llm/test", false, true, func(c *request) any {
 			c.admin()
 			out := a.provider(c.R.Context(), []any{M{"role": "user", "content": "Reply OK."}}, nil)
-			return M{"ok": true, "message": obj(obj(arr(out["choices"])[0])["message"])["content"]}
+			message := obj(obj(arr(out["choices"])[0])["message"])
+			content := str(message["content"])
+			if content == "" {
+				content = str(message["reasoning"])
+			}
+			conf := a.chatConf()
+			return M{"ok": true, "model": conf.Model, "base_url": conf.BaseURL, "reply": content}
 		}},
 		{"GET", "/api/conversations", false, false, func(c *request) any {
 			q := "SELECT * FROM conversations WHERE workspace_id=? AND user_id=?"

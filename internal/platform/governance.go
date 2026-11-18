@@ -528,7 +528,24 @@ func (a *App) ops(ws, path string) M {
 	out["engine"] = "rules"
 	out["rules_applied"] = []M{{"id": "failure_rate", "label": "失败率告警线", "threshold": 0.2}, {"id": "consecutive_failures", "label": "连续失败次数", "threshold": 3}, {"id": "timeout", "label": "超时秒数", "threshold": 1800}}
 	if path == "/ops/diagnose" {
-		out["summary"] = fmt.Sprintf("检查 %d 次运行，成功 %d 次，失败 %d 次；识别 %d 条异常信号。", len(rr), successes, failures, len(causes))
+		fallbackSummary := fmt.Sprintf("检查 %d 次运行，成功 %d 次，失败 %d 次；识别 %d 条异常信号。", len(rr), successes, failures, len(causes))
+		// Let the model explain the signals in plain language; rule findings
+		// remain the authoritative structured data.
+		findingLines := []string{}
+		for _, f := range findings {
+			findingLines = append(findingLines, fmt.Sprintf("[%v] %s：%v；建议：%v", f["severity"], f["title"], f["root_cause"], f["suggestion"]))
+		}
+		if len(findingLines) == 0 {
+			findingLines = append(findingLines, "未发现失败运行或异常信号")
+		}
+		diagnosis := a.llmTextBackground(
+			"你是数据平台运维专家。基于给定的工作流运行统计和规则信号，用简短中文给出整体健康判断、最可能的原因和下一步建议。"+
+				"只使用提供的数据，不要编造具体错误；不要输出 Markdown 标题。",
+			fmt.Sprintf("运行总数：%d，成功：%d，失败：%d，运行中：%d，排队：%d，成功率：%.1f%%\n异常信号：\n- %s",
+				len(rr), successes, failures, running, queued, num(metrics["success_rate"])*100, strings.Join(findingLines, "\n- ")),
+			fallbackSummary)
+		out["summary"] = diagnosis
+		out["engine"] = "rules+llm"
 	}
 	return out
 }

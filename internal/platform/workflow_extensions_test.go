@@ -149,8 +149,8 @@ func TestBuddyTaskFrequencyAndFields(t *testing.T) {
 func TestVolatilityRule(t *testing.T) {
 	a := testApp(t)
 	ws := str(a.row("SELECT id FROM workspaces LIMIT 1")["id"])
-	ref := "demo.retail.fact_orders"
-	col := "amount"
+	ref := "demo.semi.fact_wafer_out"
+	col := "revenue"
 
 	r := a.newRule(ws, M{"table_ref": ref, "column_name": col, "rule_type": "volatility", "config": M{"max_deviation_rate": 0.3}})
 	if str(r["rule_type"]) != "volatility" {

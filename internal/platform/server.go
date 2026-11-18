@@ -205,9 +205,11 @@ func (a *App) routesWithoutDocs() []route {
 	r = append(r, a.analysisRoutes()...)
 	r = append(r, a.driftRoutes()...)
 	r = append(r, a.agentRoutes()...)
+	r = append(r, a.modelRoutes()...)
 	r = append(r, a.operationRoutes()...)
 	r = append(r, a.mcpRoutes()...)
 	r = append(r, a.extensionRoutes()...)
+	r = append(r, a.dorisRoutes()...)
 	return r
 }
 

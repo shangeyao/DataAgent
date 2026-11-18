@@ -900,7 +900,7 @@ async function newVolume(ctx) {
       { label: '卷名', name: 'name', required: true, placeholder: '例如 raw_files',
         hint: '卷用于存放图片、PDF、日志等非结构化文件' },
       { label: '所属位置', name: 'target', type: 'select',
-        options: targets.length ? targets : ['demo.retail'] },
+        options: targets.length ? targets : ['demo.semi'] },
     ],
     onSubmit: async (d) => {
       const [cat, sch] = d.target.split('.');
@@ -926,7 +926,7 @@ async function newFunction(ctx) {
       { label: '类型', name: 'kind', type: 'select',
         options: FUNCTION_KINDS.map((k) => ({ value: k.value, label: k.label })) },
       { label: '定义', name: 'body', type: 'textarea', rows: 6,
-        placeholder: 'amount * 1.0\n-- 或 SELECT * FROM demo.retail.fact_orders' },
+        placeholder: 'revenue * 1.0\n-- 或 SELECT * FROM demo.semi.fact_wafer_out' },
       { label: '说明', name: 'description', placeholder: '可选' },
     ],
     onSubmit: async (d) => {
@@ -1017,12 +1017,12 @@ function discoverDialog(ctx, onDone) {
     </div>`,
     fields: [
       { label: 'SQL 语句', name: 'sql', type: 'textarea', rows: 10, required: true,
-        value: `CREATE OR REPLACE TABLE demo.retail.dws_daily_gmv AS
+        value: `CREATE OR REPLACE TABLE demo.semi.dws_daily_wafer_out AS
 SELECT
-  order_date,
-  sum(amount) AS gmv,
-  count(DISTINCT order_id) AS order_cnt
-FROM demo.retail.fact_orders
+  wip_date,
+  sum(lot_quantity) AS wafer_out,
+  sum(good_die) AS good_die
+FROM demo.semi.fact_wafer_out
 GROUP BY 1` },
       { label: '下游资产（可选）', name: 'downstream',
         hint: '留空则用 SQL 里解析出的目标表' },

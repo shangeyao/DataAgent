@@ -56,8 +56,8 @@ async function newWorkspace(ctx) {
   const data = await formModal({
     title: '新建工作空间',
     fields: [
-      { label: '工作空间名称', name: 'name', required: true, placeholder: '例如 demo_retail_dw', hint: '≤ 128 字符，会作为同名 Catalog 名称' },
-      { label: '描述', name: 'description', placeholder: '例如 零售数仓 POC 环境' },
+      { label: '工作空间名称', name: 'name', required: true, placeholder: '例如 demo_semi_dw', hint: '≤ 128 字符，会作为同名 Catalog 名称' },
+      { label: '描述', name: 'description', placeholder: '例如 半导体数仓 POC 环境' },
     ],
     onSubmit: async (d) => {
       const out = await api.post('/workspaces', d);
@@ -136,12 +136,13 @@ async function newUser(ctx) {
 /* -------------------------------------------------------------- 平台设置 */
 export async function renderPlatform(page, ctx) {
   page.innerHTML = loading();
-  const [settings, usage, audit, toolsOut, trace] = await Promise.all([
+  const [settings, usage, audit, toolsOut, trace, models] = await Promise.all([
     api.get('/settings'),
     api.get('/usage').catch(() => null),
     api.get('/ops/audit?limit=20').catch(() => ({ logs: [] })),
     api.get('/settings/tools').catch(() => ({ tools: [] })),
     api.get('/ops/traces').catch(() => null),
+    api.get('/settings/models').catch(() => null),
   ]);
   const canAdmin = session.user?.role === 'admin';
   const llm = settings.llm;
@@ -170,6 +171,23 @@ export async function renderPlatform(page, ctx) {
             <span class="tag ${llm.configured ? 'green' : 'orange'}">${llm.configured ? '已配置' : '未配置，使用规则引擎'}</span>
           </div>
           <div id="llm-out" class="mt-12"></div>`, { sub: 'DeepSeek 为默认底座，兼容任意 OpenAI 协议端点' })}
+
+        ${card('本地模型接入（Chat / Embedding / OCR）', `
+          <div class="col" style="gap:10px">
+            ${[
+              ['chat', 'Chat / Reasoning', models?.chat, 'settings/llm/test'],
+              ['embedding', 'Embedding 向量', models?.embedding, 'settings/embedding/test'],
+              ['ocr', 'OCR 文字识别', models?.ocr, 'settings/ocr/test'],
+            ].map(([key, label, m, ep]) => `
+              <div class="row" style="justify-content:space-between;border:1px solid var(--border);border-radius:4px;padding:10px 12px">
+                <div>
+                  <div style="font-weight:600">${label} <span class="tag ${m?.configured ? 'green' : 'orange'}">${m?.configured ? '已配置' : '未配置'}</span></div>
+                  <div class="tiny dim mono">${esc(m?.model || '-')} · ${esc(m?.base_url || '-')} · Key ${esc(m?.api_key_masked || '未配置')}</div>
+                </div>
+                <button class="btn sm" data-test-model="${ep}" data-key="${key}">测试</button>
+              </div>`).join('')}
+            <div id="model-out" class="mt-8"></div>
+          </div>`, { sub: '三个 OpenAI 兼容端点：qwen3.6-35b-a3b / bge-m3 / deepseek-ocr' })}
 
         ${card('平台信息', descList([
           ['版本', settings.platform.version],
@@ -245,6 +263,27 @@ export async function renderPlatform(page, ctx) {
     } finally {
       e.target.disabled = false;
     }
+  });
+  page.querySelectorAll('[data-test-model]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const out = page.querySelector('#model-out');
+      const key = btn.dataset.key;
+      btn.disabled = true;
+      out.innerHTML = loading(`正在测试 ${key} …`);
+      try {
+        const r = await api.post('/' + btn.dataset.testModel, {});
+        const detail = key === 'embedding'
+          ? `维度 ${r.dim} · ${r.model || ''}`
+          : key === 'ocr'
+            ? `识别结果：${esc(r.text || '(空)')}`
+            : `${r.reply || ''}`;
+        out.innerHTML = `<div class="tag green">${key} 连接成功 · ${esc(r.model || '')}</div><div class="tiny dim mt-8">${detail}</div>`;
+      } catch (err) {
+        out.innerHTML = `<div class="tag red">${key} 测试失败</div><div class="tiny mt-8">${esc(err.message)}</div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
   });
 }
 

@@ -16,7 +16,7 @@ go run ./cmd/opendatabuddy
 
 Windows：`start.bat`。打开 <http://127.0.0.1:8000>，默认账号 `admin@local` / `admin123`。
 
-首次启动会创建示例工作空间和零售数仓：5,200 行订单、600 位客户、商品、渠道、指标、看板与计算资源。示例订单日期会随首次启动日期平移。
+首次启动会创建示例工作空间和半导体数仓（Doris 语义对齐）：5,200 行晶圆产出工单、600 位客户、产品（制程节点）、晶圆厂、良率/营收指标、看板与计算资源。示例工单日期会随首次启动日期平移。
 
 ```bash
 # 构建后运行，不再需要 Go 编译器
@@ -64,6 +64,33 @@ DEEPSEEK_MODEL=deepseek-chat
 ```
 
 配置可来自进程环境、项目 `.env` 或平台设置。环境变量不会被 `.env` 覆盖。其余选项见 [.env.example](.env.example)。默认业务时区为 `Asia/Shanghai`，可用 `DATABUDDY_TIMEZONE` 修改；Python 解释器可用 `DATABUDDY_PYTHON` 指定。
+
+### 三类模型分别接入
+
+除 Chat/Reasoning 外，还可独立接入 Embedding 与 OCR（均为 OpenAI 兼容端点）：
+
+```dotenv
+# Chat/Reasoning（qwen3.6 等推理模型建议关闭思考，避免 reasoning 占满 max_tokens）
+LLM_BASE_URL=http://10.30.6.200:18019/v1
+LLM_MODEL=qwen3.6-35b-a3b
+LLM_API_KEY=your-key
+LLM_ENABLE_THINKING=false
+LLM_MAX_TOKENS=2048
+
+# Embedding：配置后语义检索自动改用 bge-m3 稠密向量（1024 维），
+# 未配置则回退到内置哈希稀疏向量
+EMBEDDING_BASE_URL=http://10.30.6.200:18001/v1
+EMBEDDING_MODEL=bge-m3
+EMBEDDING_API_KEY=your-key
+EMBEDDING_DIM=1024
+
+# OCR：图片文字识别，通过 /api/ocr 或 /api/knowledge/ocr-ingest 调用
+OCR_BASE_URL=http://10.30.6.200:18009/v1
+OCR_MODEL=deepseek-ocr
+OCR_API_KEY=your-key
+```
+
+对应接口：`POST /api/settings/llm/test`、`POST /api/settings/embedding/test`、`POST /api/settings/ocr/test` 可分别做连通性测试；`GET /api/settings/models` 查看三类模型的脱敏配置。注意：模型服务地址若为内网/私有 IP，请求会绕过系统 HTTP 代理直连。
 
 ## MCP
 

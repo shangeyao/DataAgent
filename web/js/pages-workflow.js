@@ -813,7 +813,7 @@ function openNodeEditor(page, ctx, flow, node) {
   body.innerHTML = `
     <div class="grid-2" style="gap:12px">
       <div class="field"><label><span class="req">*</span>节点名称</label>
-        <input type="text" id="nd-name" value="${esc(draft.name)}" placeholder="例如 汇总订单" /></div>
+        <input type="text" id="nd-name" value="${esc(draft.name)}" placeholder="例如 汇总晶圆产出" /></div>
       <div class="field"><label>节点 ID</label>
         <input type="text" id="nd-id" value="${esc(draft.id)}" ${isNew ? '' : 'disabled'} /></div>
     </div>
@@ -1006,7 +1006,7 @@ async function newWorkflow(page, ctx) {
       { label: '工作流级参数（JSON）', name: 'params', type: 'textarea', rows: 3, value: '{\n  "env": "prod"\n}' },
       {
         label: '初始节点（每行：名称 | 类型）', name: 'nodes', type: 'textarea', rows: 4,
-        value: '汇总订单 | sql\n质量校验 | quality\n发送通知 | notify',
+        value: '汇总产出 | sql\n质量校验 | quality\n发送通知 | notify',
         hint: `可用类型：${(meta.node_types || []).map((t) => t.key).join(' / ')}`,
       },
     ],

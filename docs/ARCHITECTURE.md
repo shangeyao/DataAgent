@@ -41,7 +41,7 @@ MCP 适配器不直接打开湖仓，避免与 HTTP 服务争用 DuckDB 的进�
 
 SQLite 继续使用旧版表结构；启动时先建缺失表，再按 `assets/migrations.json` 补列，最后建立索引。测试覆盖旧列缺失后的恢复、身份保持和重启不重复灌数。
 
-旧目录的逻辑名 `demo.retail.fact_orders` 仍映射到 `"demo__retail"."fact_orders"`。新建目录记录独立 `physical_prefix`，不同工作空间可以拥有相同的逻辑目录与表名。
+旧目录的逻辑名 `demo.semi.fact_wafer_out` 仍映射到 `"demo__semi"."fact_wafer_out"`。新建目录记录独立 `physical_prefix`，不同工作空间可以拥有相同的逻辑目录与表名。
 
 SQL 先分词，再验证只读语句、外部文件/系统函数及当前空间允许的关系引用。字符串不参与标识符重写。查询受行数与时间上限约束。SQLite 与 DuckDB 各使用一个数据库连接；这是单机部署方案。
 

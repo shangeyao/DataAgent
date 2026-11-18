@@ -398,16 +398,16 @@ function importYaml(ctx) {
         label: 'YAML 内容', name: 'yaml', type: 'textarea', rows: 14, required: true,
         value: `version: 1
 rules:
-  - table: demo.retail.fact_orders
-    column: amount
+  - table: demo.semi.fact_wafer_out
+    column: revenue
     type: range
     severity: warning
     blocking: true
     config:
       min: 0
       max: 1000000
-  - table: demo.retail.fact_orders
-    column: order_id
+  - table: demo.semi.fact_wafer_out
+    column: wafer_id
     type: unique
     config: {max_dup: 0}`,
       },

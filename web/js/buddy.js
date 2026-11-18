@@ -12,19 +12,19 @@ const MODES = [
 
 const SUGGESTIONS = {
   engineering: [
-    ['建一条每日汇总工作流', '给 fact_orders 建每日销售汇总，早上 7 点调度'],
-    ['排查上次失败', '工作流「每日经营数据刷新」上次失败的原因是什么'],
+    ['建一条每日产出汇总工作流', '给 fact_wafer_out 建每日晶圆产出汇总，早上 7 点调度'],
+    ['排查上次失败', '工作流「每日晶圆产出刷新」上次失败的原因是什么'],
     ['看看有哪些表', '列出当前空间的数据表、行数与用途'],
   ],
   governance: [
     ['扫描敏感字段', '扫描 dim_customer 的敏感字段，给出分级、置信度与依据'],
-    ['推荐质量规则', '给 fact_orders 推荐数据质量规则并说明理由'],
-    ['资产盘点', '盘点 fact_orders 的行数、空值率与质量得分'],
+    ['推荐质量规则', '给 fact_wafer_out 推荐数据质量规则并说明理由'],
+    ['资产盘点', '盘点 fact_wafer_out 的行数、良率与质量得分'],
   ],
   analysis: [
-    ['近 30 天 GMV 趋势', '按天看 GMV 走势，指出拐点与环比变化'],
-    ['渠道对比', '各渠道 GMV 排名与占比'],
-    ['生成经营看板', '帮我生成一份零售经营的 AI 看板'],
+    ['近 30 天良率趋势', '按天看综合良率走势，指出拐点与环比变化'],
+    ['晶圆厂对比', '各晶圆厂晶圆出货量与营收排名及占比'],
+    ['生成良率看板', '帮我生成一份晶圆良率的 AI 看板'],
   ],
 };
 
@@ -646,7 +646,7 @@ function bindComposer() {
     modal({
       title: '选择工作目录',
       body: `<div class="col" style="gap:6px">
-        ${['工作空间根目录', 'demo.retail', 'notebooks', 'python'].map((d) => `<div class="list-item" data-dir="${d}" style="cursor:pointer">
+        ${['工作空间根目录', 'demo.semi', 'notebooks', 'python'].map((d) => `<div class="list-item" data-dir="${d}" style="cursor:pointer">
           <span style="color:var(--text-3)">${icon('folder', 16)}</span><div class="meta"><strong>${d}</strong></div></div>`).join('')}
         <div class="tiny dim mt-8">模型会优先读取该目录理解项目，产物默认落盘此处。不限制访问其他路径。</div>
       </div>`,

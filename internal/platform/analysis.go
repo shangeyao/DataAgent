@@ -71,6 +71,19 @@ func (a *App) metric(ws, name string) M {
 	fail(404, "指标不存在："+name)
 	return nil
 }
+// metricDateCol returns the time dimension column for a metric. It prefers a
+// dimension explicitly named the metric's date the semantic layer uses and falls
+// back to any dimension name ending in "_date", so the analysis engine is not
+// coupled to a specific business schema (retail order_date, semi wip_date, ...).
+func metricDateCol(m M) string {
+	for _, d := range arr(m["dimensions"]) {
+		n := str(d)
+		if n == "wip_date" || n == "order_date" || strings.HasSuffix(n, "_date") {
+			return n
+		}
+	}
+	return "wip_date"
+}
 func (a *App) metricSQL(ws string, m M, args M) string {
 	t := a.resolve(ws, str(m["table_ref"]))
 	joins := arr(m["joins"])
@@ -93,17 +106,18 @@ func (a *App) metricSQL(ws string, m M, args M) string {
 	for _, d := range arr(m["dimensions"]) {
 		allowed[str(d)] = true
 	}
+	dateCol := metricDateCol(m)
 	dims := []string{}
 	for _, d := range arr(args["dimensions"]) {
 		name := str(d)
 		if name == "__date__" {
-			name = "order_date"
+			name = dateCol
 		}
 		if !allowed[name] || dimExpr[name] == "" {
 			fail(422, "指标不支持维度："+name)
 		}
 		expr := dimExpr[name]
-		if name == "order_date" && args["granularity"] != nil {
+		if name == dateCol && args["granularity"] != nil {
 			grain := str(args["granularity"])
 			if grain != "day" && grain != "week" && grain != "month" && grain != "year" {
 				fail(422, "无效时间粒度")
@@ -126,12 +140,12 @@ func (a *App) metricSQL(ws string, m M, args M) string {
 			if _, e := time.Parse("2006-01-02", v); e != nil {
 				fail(422, "日期格式应为 YYYY-MM-DD")
 			}
-			if dimExpr["order_date"] != "" {
+			if dimExpr[dateCol] != "" {
 				op := ">="
 				if k == "end" {
 					op = "<="
 				}
-				where = append(where, dimExpr["order_date"]+op+"DATE '"+v+"'")
+				where = append(where, dimExpr[dateCol]+op+"DATE '"+v+"'")
 			}
 		}
 	}
@@ -166,7 +180,7 @@ func (a *App) ask(ws, question, period string) M {
 		}
 	}
 	if picked == "" {
-		for _, pair := range [][2]string{{"销售", "gmv"}, {"金额", "gmv"}, {"成交额", "gmv"}, {"订单", "order_cnt"}, {"客户", "customer_cnt"}, {"客单价", "avg_order_value"}} {
+		for _, pair := range [][2]string{{"营收", "revenue"}, {"收入", "revenue"}, {"金额", "revenue"}, {"晶圆", "wafer_out"}, {"出货", "wafer_out"}, {"良率", "yield_rate"}, {"良品", "good_die"}, {"客户", "customer_cnt"}, {"单片", "avg_revenue_per_wafer"}} {
 			if strings.Contains(question, pair[0]) {
 				picked = pair[1]
 				break
@@ -177,7 +191,7 @@ func (a *App) ask(ws, question, period string) M {
 		fail(422, "未匹配注册指标，请在问题中指定指标名")
 	}
 	dims := []string{}
-	for _, p := range [][2]string{{"渠道", "channel_name"}, {"品类", "category"}, {"城市", "city"}, {"趋势", "__date__"}, {"每日", "__date__"}} {
+	for _, p := range [][2]string{{"制程", "process_node"}, {"节点", "process_node"}, {"品类", "product_category"}, {"客户行业", "segment"}, {"行业", "segment"}, {"区域", "region"}, {"晶圆厂", "fab_name"}, {"Fab", "fab_name"}, {"趋势", "__date__"}, {"每日", "__date__"}} {
 		if strings.Contains(question, p[0]) {
 			dims = append(dims, p[1])
 			break
@@ -197,8 +211,39 @@ func (a *App) ask(ws, question, period string) M {
 	out["engine"] = "metric"
 	out["question"] = question
 	out["period"] = win
-	out["answer"] = fmt.Sprintf("按注册口径 %s 查询，共返回 %v 行；时间范围为 %s 至 %s。", picked, out["row_count"], win["start"], win["end"])
-	out["reasoning"] = "匹配注册指标与业务维度，通过确定性语义层编译 SQL 并执行只读校验。"
+	fallbackAnswer := fmt.Sprintf("按注册口径 %s 查询，共返回 %v 行；时间范围为 %s 至 %s。", picked, out["row_count"], win["start"], win["end"])
+	// Use the configured model to turn the deterministic query result into a
+	// natural-language answer; fall back to the template on any failure.
+	user := fmt.Sprintf("用户问题：%s\n注册指标：%s（%s）\n查询时间范围：%s 至 %s\n返回行数：%v\n",
+		question, picked, str(def(a.row("SELECT display_name FROM metrics WHERE workspace_id=? AND name=?", ws, picked), "display_name", picked)),
+		win["start"], win["end"], out["row_count"])
+	if cols, ok := out["columns"].([]string); ok && len(cols) > 0 {
+		user += "结果列：" + strings.Join(cols, "、") + "\n"
+	}
+	if rows, ok := out["rows"].([][]any); ok {
+		for i, row := range rows {
+			if i >= 10 {
+				user += "…（更多行已省略）\n"
+				break
+			}
+			parts := []string{}
+			for _, v := range row {
+				parts = append(parts, fmt.Sprint(v))
+			}
+			user += "- " + strings.Join(parts, " | ") + "\n"
+		}
+	}
+	answer := a.llmTextBackground(
+		"你是 OpenDataBuddy 的数据分析师。基于给定的注册指标查询结果，用简洁中文直接回答用户问题。"+
+			"只能使用提供的数据，不要编造数字或口径；若数据不足以判断，明确说明。不要输出 Markdown 标题。",
+		user, fallbackAnswer)
+	if answer == fallbackAnswer {
+		out["engine"] = "metric+template"
+	} else {
+		out["engine"] = "metric+llm"
+	}
+	out["answer"] = answer
+	out["reasoning"] = "匹配注册指标与业务维度，通过确定性语义层编译 SQL 并执行只读校验；自然语言由模型生成。"
 	out["chart_data"] = M{"spec": out["chart"], "columns": out["columns"], "rows": out["rows"]}
 	return out
 }
@@ -207,7 +252,7 @@ func (a *App) attribute(ws string, m M) M {
 	dim := str(m["dimension"])
 	if dim == "" {
 		for _, v := range arr(metric["dimensions"]) {
-			if v != "order_date" {
+			if v != metricDateCol(metric) {
 				dim = str(v)
 				break
 			}
@@ -262,7 +307,21 @@ func (a *App) attribute(ws string, m M) M {
 	if totalPrev != 0 {
 		growth = delta / totalPrev
 	}
-	return M{"metric": metric, "dimension": dim, "dimension_label": dim, "period": win, "total_current": totalCur, "total_previous": totalPrev, "total_delta": delta, "growth": growth, "driver": driver, "contributions": cc, "all_contributions": cc, "conclusion": fmt.Sprintf("本期 %g，上期 %g，差值 %g；主要贡献维度为 %s。", totalCur, totalPrev, delta, driver), "table": M{"columns": cols, "rows": rr}, "chart_data": M{"columns": cols, "rows": rr, "spec": M{"type": "bar", "x": 0, "y": 3}}}
+	fallbackConclusion := fmt.Sprintf("本期 %g，上期 %g，差值 %g；主要贡献维度为 %s。", totalCur, totalPrev, delta, driver)
+	contribLines := []string{}
+	for i, c := range cc {
+		if i >= 5 {
+			break
+		}
+		contribLines = append(contribLines, fmt.Sprintf("%s：本期 %g，上期 %g，差值 %g，贡献度 %.1f%%", str(c["value"]), num(c["current"]), num(c["previous"]), num(c["delta"]), num(c["share"])*100))
+	}
+	conclusion := a.llmTextBackground(
+		"你是数据分析师。基于给定的指标本期/上期对比和维度贡献数据，用一段简洁中文说明变化驱动因素。"+
+			"只使用提供的数据，不要编造；指出主要贡献维度及方向。不要输出 Markdown 标题。",
+		fmt.Sprintf("指标：%s\n维度：%s\n周期：%s 至 %s\n本期合计：%g\n上期合计：%g\n差值：%g\n增长率：%v\n主要贡献：%s\n",
+			str(metric["display_name"]), dim, win["start"], win["end"], totalCur, totalPrev, delta, growth, strings.Join(contribLines, "；")),
+		fallbackConclusion)
+	return M{"metric": metric, "dimension": dim, "dimension_label": dim, "period": win, "total_current": totalCur, "total_previous": totalPrev, "total_delta": delta, "growth": growth, "driver": driver, "contributions": cc, "all_contributions": cc, "conclusion": conclusion, "table": M{"columns": cols, "rows": rr}, "chart_data": M{"columns": cols, "rows": rr, "spec": M{"type": "bar", "x": 0, "y": 3}}}
 }
 func (a *App) report(ws string, m M) M {
 	names := arr(m["metrics"])
@@ -291,10 +350,30 @@ func (a *App) report(ws string, m M) M {
 	if len(sections) > 0 {
 		sections[0]["chart"] = M{"spec": M{"type": "table"}, "columns": []string{"指标", "本期值", "单位"}, "rows": table}
 	}
+	// Let the model rewrite the narrative sections and overall summary from the
+	// real query results. Each section keeps its original text as a fallback.
+	metricLines := []string{}
+	for _, row := range table {
+		metricLines = append(metricLines, fmt.Sprintf("%v：%v %v", row[0], row[1], row[2]))
+	}
+	reportContext := fmt.Sprintf("报告主题：%s\n周期：%s 至 %s\n指标结果：\n- %s\n",
+		def(m, "topic", "经营分析"), win["start"], win["end"], strings.Join(metricLines, "\n- "))
 	for _, s := range sections {
 		s["heading"] = s["title"]
+		orig := str(s["body"])
+		s["body"] = a.llmTextBackground(
+			"你是经营分析报告撰写助手。根据提供的真实指标数据，为报告章节「"+str(s["title"])+"」写一段简短专业的中文分析。"+
+				"只使用提供的数据和口径，不要编造数字；不要输出 Markdown 标题或章节名。",
+			reportContext+"\n章节原有要点："+orig,
+			orig)
 	}
-	return M{"title": str(def(m, "topic", "经营分析")) + " · " + str(win["label"]), "topic": def(m, "topic", "经营分析"), "period": win, "metrics": picked, "sections": sections, "summary": fmt.Sprintf("已完成 %d 个指标的本期统计。", len(picked)), "generated_at": now()}
+	fallbackSummary := fmt.Sprintf("已完成 %d 个指标的本期统计。", len(picked))
+	summary := a.llmTextBackground(
+		"你是经营分析报告撰写助手。基于提供的真实指标结果，用一段简短中文总结本期经营情况与需要关注的方向。"+
+			"只使用提供的数据，不要编造数字；不要输出 Markdown 标题。",
+		reportContext,
+		fallbackSummary)
+	return M{"title": str(def(m, "topic", "经营分析")) + " · " + str(win["label"]), "topic": def(m, "topic", "经营分析"), "period": win, "metrics": picked, "sections": sections, "summary": summary, "generated_at": now()}
 }
 // reportChannel turns a schedule channel descriptor into a channel the
 // delivery path understands. A schedule stores either a configured channel id
@@ -401,7 +480,17 @@ func (a *App) analysisRoutes() []route {
 			}
 			out := a.ask(c.WS, question, c.s("period"))
 			out["title"] = question
-			return M{"name": question, "description": "由语义层生成", "cards": []M{out}, "metrics": []M{}, "dimensions": []M{}, "window": periodWindow(c.s("period"))["label"], "reasoning": "按指标口径生成查询与可视化卡片"}
+			description := "由语义层生成"
+			reasoning := "按指标口径生成查询与可视化卡片"
+			if a.llm("api_key", "") != "" {
+				description = a.llmText(c.R.Context(),
+					"你是数据分析师。根据用户想看的看板描述，用一句话说明这个看板回答什么问题。不要输出 Markdown 标题。",
+					"看板描述："+question, description)
+				reasoning = a.llmText(c.R.Context(),
+					"你是数据分析师。用一句话说明此看板卡片为何这样设计（指标口径与图表选择）。不要输出 Markdown 标题。",
+					fmt.Sprintf("看板描述：%s\n使用指标：%v\n返回行数：%v", question, out["metric"], out["row_count"]), reasoning)
+			}
+			return M{"name": question, "description": description, "cards": []M{out}, "metrics": []M{}, "dimensions": []M{}, "window": periodWindow(c.s("period"))["label"], "reasoning": reasoning}
 		}},
 		{"POST", "/api/reports/{report_id}/run", false, false, func(c *request) any {
 			return M{"run": a.runReport(c.WS, a.owned("reports", c.p("report_id"), c.WS), "manual")}

@@ -31,9 +31,9 @@ export async function renderSemantic(page, ctx) {
     <div class="grid-2 mt-16">
       <div id="metric-preview"></div>
       ${card('本体建模（Ontology）', `<div class="tiny muted" style="line-height:2">
-        实体：客户、商品、渠道、订单<br>
-        关系：订单 → 客户（多对一）、订单 → 商品（多对一）、订单 → 渠道（多对一）<br>
-        指标挂载在「订单」实体上，维度通过关系自动解析到维度表。<br><br>
+        实体：产品、晶圆厂、客户、产出工单<br>
+        关系：工单 → 产品（多对一）、工单 → 晶圆厂（多对一）、工单 → 客户（多对一）<br>
+        指标挂载在「产出工单」实体上，维度通过关系自动解析到维度表。<br><br>
         当前语义层配置了 ${(metrics[0]?.joins || []).length} 条 join 关系，新增指标会自动复用。</div>`)}
     </div>`;
 
@@ -85,13 +85,13 @@ async function newMetric(ctx, tables) {
     title: '注册指标',
     wide: true,
     fields: [
-      { label: '指标标识', name: 'name', required: true, placeholder: 'net_gmv', hint: '英文，唯一' },
-      { label: '中文名', name: 'display_name', required: true, placeholder: '净GMV' },
+      { label: '指标标识', name: 'name', required: true, placeholder: 'yield_rate', hint: '英文，唯一' },
+      { label: '中文名', name: 'display_name', required: true, placeholder: '综合良率' },
       { label: '主表', name: 'table_ref', type: 'select', options: tables.map((t) => t.ref) },
-      { label: '聚合表达式', name: 'expr', required: true, placeholder: 'sum(f.amount)', hint: '别名固定为 f；维度表字段会复用已有 join' },
-      { label: '单位', name: 'unit', placeholder: '元 / % / 单' },
-      { label: '可用维度', name: 'dimensions', placeholder: 'order_date,channel_name,category' },
-      { label: '口径说明', name: 'description', type: 'textarea', rows: 3, placeholder: '写清边界条件，例如是否含退款' },
+      { label: '聚合表达式', name: 'expr', required: true, placeholder: 'sum(f.revenue)', hint: '别名固定为 f；维度表字段会复用已有 join' },
+      { label: '单位', name: 'unit', placeholder: '% / 片 / 万元' },
+      { label: '可用维度', name: 'dimensions', placeholder: 'wip_date,process_node,region' },
+      { label: '口径说明', name: 'description', type: 'textarea', rows: 3, placeholder: '写清边界条件，例如良率是否含光罩重复曝光' },
     ],
     onSubmit: async (d) => {
       await api.post('/metrics', {
@@ -306,10 +306,10 @@ async function newSpace(ctx, tables, metrics) {
     title: '创建分析空间',
     wide: true,
     fields: [
-      { label: '空间名称', name: 'name', required: true, placeholder: '例如 零售经营分析' },
+      { label: '空间名称', name: 'name', required: true, placeholder: '例如 晶圆产线经营分析' },
       { label: '描述', name: 'description' },
-      { label: '数据表', name: 'tables', placeholder: '逗号分隔，如 demo.retail.fact_orders', hint: tables.slice(0, 4).map((t) => t.ref).join(' / ') },
-      { label: '指标', name: 'metrics', placeholder: '逗号分隔，如 gmv,order_cnt', hint: metrics.slice(0, 6).map((m) => m.name).join(' / ') },
+      { label: '数据表', name: 'tables', placeholder: '逗号分隔，如 demo.semi.fact_wafer_out', hint: tables.slice(0, 4).map((t) => t.ref).join(' / ') },
+      { label: '指标', name: 'metrics', placeholder: '逗号分隔，如 wafer_out,yield_rate', hint: metrics.slice(0, 6).map((m) => m.name).join(' / ') },
     ],
     onSubmit: async (d) => {
       await api.post('/analysis-spaces', {
@@ -699,7 +699,7 @@ export async function renderDashboards(page, ctx) {
       wide: true,
       submitText: '生成卡片',
       fields: [
-        { label: '想看什么', name: 'prompt', type: 'textarea', rows: 3, required: true, placeholder: '例如：近 30 天按渠道的 GMV 趋势', hint: '按语义层指标口径编译 SQL，只读执行' },
+        { label: '想看什么', name: 'prompt', type: 'textarea', rows: 3, required: true, placeholder: '例如：近 30 天按制程节点的良率趋势', hint: '按语义层指标口径编译 SQL，只读执行' },
         { label: '时间窗口', name: 'period', type: 'select', options: CARD_PERIODS },
       ],
       onSubmit: async (d) => {
@@ -880,7 +880,7 @@ async function newBoard(ctx, metrics) {
       { label: '看板名称', name: 'name', required: true },
       { label: '指标', name: 'metric', type: 'select', options: metrics.map((m) => ({ value: m.name, label: m.display_name || m.name })) },
       { label: '维度', name: 'dim', type: 'select', options: [
-        { value: '', label: '总计' }, { value: '__date__', label: '按天趋势' }, { value: 'channel_name', label: '按渠道' }, { value: 'category', label: '按品类' }] },
+        { value: '', label: '总计' }, { value: '__date__', label: '按天趋势' }, { value: 'process_node', label: '按制程节点' }, { value: 'fab_name', label: '按晶圆厂' }] },
     ],
     onSubmit: async (d) => {
       const preview = await api.post('/metrics/query', { metric: d.metric, dimensions: [], granularity: null });
