@@ -181,8 +181,21 @@ func (a *App) Server(addr string) *ghttp.Server {
 	s.SetDumpRouterMap(false)
 	s.SetIndexFolder(false)
 	s.SetClientMaxBodySize(128 << 20)
-	s.AddStaticPath("/assets", filepath.Join(a.Root, "web"))
-	s.BindHandler("GET:/", func(r *ghttp.Request) { r.Response.ServeFile(filepath.Join(a.Root, "web", "index.html")) })
+	// 前端由 Vue3 + Vite 构建，产物在 frontend/dist；history 路由由 index.html 兜底。
+	distDir := filepath.Join(a.Root, "frontend", "dist")
+	s.AddStaticPath("/assets", filepath.Join(distDir, "assets"))
+	spaIndex := filepath.Join(distDir, "index.html")
+	s.BindHandler("GET:/", func(r *ghttp.Request) { r.Response.ServeFile(spaIndex) })
+	// Vue Router history 模式：非 API 路径统一回退到 index.html。
+	// 具体 API 路由已在下面注册，优先匹配，不会进入该兜底。
+	s.BindHandler("GET:/*any", func(r *ghttp.Request) {
+		p := r.Request.URL.Path
+		if strings.HasPrefix(p, "/api/") || strings.HasPrefix(p, "/assets/") {
+			r.Response.WriteStatus(404)
+			return
+		}
+		r.Response.ServeFile(spaIndex)
+	})
 	for _, rt := range a.routes() {
 		a.route(s, rt)
 	}

@@ -2,7 +2,7 @@
 
 开源数据智能体工作台：用对话完成取数、开发、治理与分析。
 
-后端使用 **GoFrame v2.10.4**（2026-11-10 核对的最新稳定版），本地 **SQLite + DuckDB** 存储，前端为原生 ES Module，无 npm、无构建步骤。Python 仅执行 Notebook / 工作流 Python 节点，不承担 HTTP、鉴权、调度或业务服务。
+后端使用 **GoFrame v2.10.4**（2026-11-10 核对的最新稳定版），本地 **SQLite + DuckDB** 存储；前端为 **Vue 3 + Vite + Naive UI + Pinia + TypeScript**（`frontend/`，参照 InnoData 工程结构），构建产物由 Go 单进程直接提供。Python 仅执行 Notebook / 工作流 Python 节点，不承担 HTTP、鉴权、调度或业务服务。
 
 ## 启动
 
@@ -27,7 +27,19 @@ make build
 DATABUDDY_DATA_DIR=/tmp/odb-dev go run ./cmd/opendatabuddy --port 8042
 ```
 
-进程退出会停止调度并关闭数据库、Python 内核。`--root` 指定项目根目录；相对 `--data-dir` 相对于该目录解析。运行时需要根目录中的 `web/` 和可选 Python 内核脚本。
+进程退出会停止调度并关闭数据库、Python 内核。`--root` 指定项目根目录；相对 `--data-dir` 相对于该目录解析。运行时需要 `frontend/dist/`（前端构建产物）和可选 Python 内核脚本。
+
+### 前端开发
+
+前端工程在 `frontend/`，需要 Node.js 24+。首次构建：
+
+```bash
+cd frontend
+npm ci          # 安装依赖
+npm run build   # 构建到 frontend/dist/，Go 直接提供；保持单进程部署
+```
+
+开发模式（Vite dev server 代理 `/api` 到 Go 8000）：`npm run dev`，访问 <http://127.0.0.1:3082>。类型检查：`npm run typecheck`。
 
 ## 功能
 
@@ -142,7 +154,8 @@ cmd/opendatabuddy/        Go 程序入口，HTTP / stdio MCP
 internal/platform/       鉴权、存储、查询及各业务引擎
 internal/platform/assets 表结构、增量迁移、示例数据、元信息和历史契约
 scripts/python_kernel.py 唯一 Python 运行时：执行用户代码，通过回调请求 Go 查询
-web/                     原生前端与 SVG 图表
+frontend/                Vue 3 + Vite + Naive UI 前端工程（当前实现），构建到 dist/
+web/                     旧版原生前端（保留存档，Go 已不再提供）
 ```
 
 架构见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)，与商业产品的差异见 [docs/OSS_DIFF.md](docs/OSS_DIFF.md)。
