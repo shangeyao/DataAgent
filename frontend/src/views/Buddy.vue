@@ -11,6 +11,7 @@ import {
 } from '@vicons/ionicons5'
 import { api, fmt } from '../api'
 import { usePortalStore } from '../store/portal'
+import TeamHero from '../components/TeamHero.vue'
 
 interface Artifact { type: string; title?: string; [k: string]: any }
 interface Msg { role: string; content: string; created_at?: string; meta?: any }
@@ -186,28 +187,10 @@ onMounted(async () => {
       <div ref="bodyRef" class="bd-body">
         <div v-if="!messages.length && !sending" class="bd-welcome">
           <div class="bd-welcome-head">
-            <span class="bd-welcome-logo"><NIcon :component="SparklesOutline" :size="24" /></span>
-            <h1>DataBuddy <span class="bd-star">✦</span> 数据工程、治理专家团随时待命</h1>
+            <h1>DataBuddy <span class="bd-star">✦</span> <span class="bd-slogan">数据工程、治理专家团随时待命</span></h1>
+            <p class="bd-welcome-sub">用对话完成取数、开发、治理与分析</p>
           </div>
-          <svg viewBox="0 0 900 220" class="bd-hero" preserveAspectRatio="xMidYMax meet">
-            <defs>
-              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#eef4ff"/><stop offset="100%" stop-color="#fbfdff"/></linearGradient>
-              <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c9d8f2"/><stop offset="100%" stop-color="#a9c0e6"/></linearGradient>
-            </defs>
-            <rect width="900" height="220" fill="url(#sky)" rx="12"/>
-            <g fill="url(#body)">
-              <g v-for="(cx,i) in [252,352,452,552,652]" :key="i">
-                <circle :cx="cx" :cy="[110,100,92,100,110][i]" :r="[20,22,25,22,20][i]"/>
-                <path :d="`M${cx-48} 212 C${cx-44} ${[140,132,124,132,140][i]}, ${cx-20} ${[125,118,110,118,125][i]}, ${cx} ${[125,118,110,118,125][i]} C${cx+20} ${[125,118,110,118,125][i]}, ${cx+44} ${[140,132,124,132,140][i]}, ${cx+48} 212 Z`"/>
-              </g>
-            </g>
-            <g opacity=".85">
-              <rect x="66" y="70" width="112" height="60" rx="8" fill="#fff" stroke="#d5e3fb"/>
-              <g stroke="#b9cfee" stroke-width="2"><path d="M82 90h78M82 102h60M82 114h70"/></g>
-              <rect x="722" y="64" width="118" height="70" rx="8" fill="#fff" stroke="#d5e3fb"/>
-              <circle cx="781" cy="100" r="20" fill="none" stroke="#9dbdea" stroke-width="7" stroke-dasharray="80 46"/>
-            </g>
-          </svg>
+          <TeamHero class="bd-hero" compact />
           <div class="bd-experts">
             <button v-for="e in experts" :key="e.id" class="bd-ecard" :class="{ active: expert === e.id }" @click="expert = e.id; fillPrompt(e.prompt)">
               <div class="bd-ec-head"><NIcon :component="e.id === 'engineering' ? SettingsOutline : e.id === 'analysis' ? AnalyticsOutline : ShieldCheckmarkOutline" :size="16" /><strong>{{ e.label }}</strong></div>
@@ -311,29 +294,32 @@ onMounted(async () => {
 .bd-logo-mark { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg,#00c2d1,#0089a8); font-size: 15px; }
 .bd-side-scroll { flex: 1; overflow: auto; padding: 12px 10px; }
 .bd-new { margin-bottom: 10px; }
-.bd-label { font-size: 11px; color: #999; padding: 10px 6px 4px; }
-.bd-expert-mini, .bd-conv { display: flex; align-items: center; gap: 8px; width: 100%; height: 34px; padding: 0 8px; border: none; border-radius: 6px; background: transparent; cursor: pointer; font-size: 13px; text-align: left; color: inherit; }
-.bd-expert-mini:hover, .bd-conv:hover { background: #f5f7fa; }
-.bd-expert-mini.active, .bd-conv.active { background: #e4f7f9; color: #008a99; }
-.bd-empty { font-size: 12px; color: #999; padding: 6px; }
+.bd-label { font-size: 11px; font-weight: 500; letter-spacing: .4px; color: #a1aab5; padding: 14px 8px 6px; }
+.bd-expert-mini, .bd-conv { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 38px; padding: 7px 10px; margin: 2px 0; border: none; border-radius: 8px; background: transparent; cursor: pointer; font-size: 13px; line-height: 1.5; text-align: left; color: #4b5563; transition: .12s; }
+.bd-conv { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.bd-expert-mini:hover, .bd-conv:hover { background: #f3f6f9; color: #111827; }
+.bd-expert-mini.active, .bd-conv.active { background: #e4f7f9; color: #007c8a; font-weight: 500; }
+.bd-empty { font-size: 12px; color: #9ca3af; padding: 8px 10px; }
 .bd-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .bd-head { height: 56px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--n-border-color, #eee); }
 .bd-body { flex: 1; overflow: auto; padding: 20px 26px; }
-.bd-welcome { max-width: 820px; margin: 0 auto; }
-.bd-welcome-head { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
-.bd-welcome-logo { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #e4f7f9; color: #00a2b3; }
-.bd-welcome-head h1 { font-size: 19px; }
-.bd-star { color: #17b8a6; }
-.bd-hero { width: 100%; display: block; margin-bottom: 14px; }
+.bd-welcome { max-width: 880px; margin: 0 auto; }
+.bd-welcome-head { text-align: center; margin-bottom: 6px; }
+.bd-welcome-head h1 { font-family: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", v-sans, system-ui, sans-serif; font-size: clamp(22px, 2.4vw, 30px); font-weight: 600; color: #111827; letter-spacing: 1px; line-height: 1.4; }
+.bd-star { background: linear-gradient(135deg,#60a5fa,#34d399); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: .85em; }
+.bd-slogan { font-weight: 500; color: #374151; }
+.bd-welcome-sub { color: #9ca3af; font-size: 13px; margin-top: 8px; }
+.bd-hero { width: 100%; display: block; margin: 6px 0 8px; }
 .bd-experts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
-.bd-ecard { text-align: left; padding: 12px 14px; border: 1px solid var(--n-border-color, #e7e7e7); border-radius: 8px; background: #fff; cursor: pointer; }
-.bd-ecard:hover, .bd-ecard.active { border-color: #00a2b3; background: #f0fbfc; }
-.bd-ec-head { display: flex; align-items: center; gap: 6px; color: #008a99; font-size: 13.5px; }
-.bd-ec-desc { font-size: 12px; color: #666; margin: 7px 0; min-height: 36px; line-height: 1.6; }
+.bd-ecard { position: relative; text-align: left; padding: 16px 16px 14px; border: 1px solid transparent; border-radius: 14px; background: linear-gradient(160deg, #ffffff, #fbfcfe); cursor: pointer; box-shadow: 0 2px 10px -4px rgba(20,50,80,.08), 0 0 0 1px rgba(20,50,80,.045); transition: .18s; }
+.bd-ecard:hover, .bd-ecard.active { border-color: transparent; background: linear-gradient(150deg, #f2fcfd, #eaf8fa); box-shadow: 0 14px 30px -12px rgba(0,162,179,.28), 0 0 0 1px rgba(0,162,179,.22); transform: translateY(-2px); }
+.bd-ec-head { display: flex; align-items: center; gap: 7px; color: #007c8a; font-size: 14px; font-weight: 600; }
+.bd-ec-desc { font-size: 12px; color: #6b7280; margin: 9px 0; min-height: 38px; line-height: 1.65; }
 .bd-ec-tags { display: flex; gap: 5px; flex-wrap: wrap; }
-.bd-bubbles { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-top: 14px; }
-.bd-bubble { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid var(--n-border-color, #e7e7e7); border-radius: 8px; background: #fff; color: #555; font-size: 12.5px; cursor: pointer; text-align: left; }
-.bd-bubble:hover { border-color: #00a2b3; color: #008a99; }
+.bd-bubbles { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; margin-top: 16px; }
+.bd-bubble { display: flex; justify-content: space-between; gap: 8px; padding: 10px 14px; border: 1px solid #eceef2; border-radius: 9px; background: #fbfcfd; color: #4b5563; font-size: 12.5px; cursor: pointer; text-align: left; transition: .15s; }
+.bd-bubble:hover { border-color: #7fd3dc; color: #007c8a; background: #f2fbfc; box-shadow: 0 3px 10px rgba(0,162,179,.1); }
+.bd-bubble span { color: #b6c0cb; }
 .bd-foot { text-align: center; font-size: 11.5px; color: #aaa; margin-top: 16px; }
 .bd-msgs { display: flex; flex-direction: column; gap: 20px; }
 .bd-msg { display: flex; gap: 10px; align-items: flex-start; }
