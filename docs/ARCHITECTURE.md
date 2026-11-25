@@ -22,7 +22,7 @@ MCP 适配器不直接打开湖仓，避免与 HTTP 服务争用 DuckDB 的进�
 
 | 文件 | 职责 |
 | --- | --- |
-| `cmd/opendatabuddy/main.go` | 环境与参数、HTTP 启停、调度生命周期、stdio 适配器 |
+| `cmd/dataagent/main.go` | 环境与参数、HTTP 启停、调度生命周期、stdio 适配器 |
 | `internal/platform/server.go` | GoFrame 路由、请求上下文、鉴权入口、错误响应与审计 |
 | `store.go` / `config.go` | SQLite 存储、增量迁移、DuckDB 初始化、环境文件 |
 | `auth.go` | PBKDF2 密码、可撤销会话、用户和空间权限 |

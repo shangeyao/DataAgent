@@ -234,7 +234,7 @@ func (a *App) ask(ws, question, period string) M {
 		}
 	}
 	answer := a.llmTextBackground(
-		"你是 OpenDataBuddy 的数据分析师。基于给定的注册指标查询结果，用简洁中文直接回答用户问题。"+
+		"你是 DataAgent 的数据分析师。基于给定的注册指标查询结果，用简洁中文直接回答用户问题。"+
 			"只能使用提供的数据，不要编造数字或口径；若数据不足以判断，明确说明。不要输出 Markdown 标题。",
 		user, fallbackAnswer)
 	if answer == fallbackAnswer {

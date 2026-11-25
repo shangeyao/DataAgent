@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-// OpenDataBuddy 是 Go 单进程部署：Vite 构建产物输出到 dist，由 Go 直接 serve。
+// DataAgent 是 Go 单进程部署：Vite 构建产物输出到 dist，由 Go 直接 serve。
 // 开发时把 /api 代理到本地 Go 后端 8000。
 export default defineConfig({
   plugins: [vue()],

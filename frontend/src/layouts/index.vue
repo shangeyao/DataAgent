@@ -127,7 +127,7 @@ onMounted(() => { if (!portal.user) void portal.bootstrap() })
         <NTab v-for="tab in visited" :key="tab.key" :name="tab.key" :closable="tab.key !== 'overview'">{{ tab.title }}</NTab>
       </NTabs>
     </template>
-    <template #footer><div class="footer">OpenDataBuddy · Powered by DataBuddy</div></template>
+    <template #footer><div class="footer">DataAgent · Powered by DataBuddy</div></template>
 
     <main v-if="route.meta.full" class="full-page"><RouterView v-slot="{ Component }"><component :is="Component" /></RouterView></main>
     <template v-else>

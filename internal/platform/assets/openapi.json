@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenDataBuddy",
+    "title": "DataAgent",
     "description": "开源版大数据智能体工作台 · DeepSeek Harness 底座",
     "version": "0.3.0"
   },

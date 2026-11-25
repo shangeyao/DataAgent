@@ -61,5 +61,5 @@ function viewFile(path: string): string {
   return map[path] || path.charAt(0).toUpperCase() + path.slice(1)
 }
 
-router.afterEach((to) => { document.title = `${String(to.meta.title ?? 'DataBuddy')} · OpenDataBuddy` })
+router.afterEach((to) => { document.title = `${String(to.meta.title ?? '工作台')} · DataAgent` })
 export default router

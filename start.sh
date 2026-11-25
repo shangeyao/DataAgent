@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-exec go run ./cmd/opendatabuddy "$@"
+exec go run ./cmd/dataagent "$@"

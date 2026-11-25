@@ -1,8 +1,8 @@
 .PHONY: run build test test-http vet
 run:
-	go run ./cmd/opendatabuddy
+	go run ./cmd/dataagent
 build:
-	go build -o bin/opendatabuddy ./cmd/opendatabuddy
+	go build -o bin/dataagent ./cmd/dataagent
 test:
 	go test ./...
 test-http:

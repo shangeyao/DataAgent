@@ -138,7 +138,7 @@ func (a *App) operationRoutes() []route {
 		{"POST", "/api/alerts/emit", false, false, func(c *request) any { return a.emit(c.WS, c.Body) }},
 		{"POST", "/api/alerts/channels/{channel_id}/test", false, false, func(c *request) any {
 			channel := a.owned("alert_channels", c.p("channel_id"), c.WS)
-			result := a.deliverAlert(channel, M{"event": "test", "subject": "渠道测试", "severity": "info", "message": "这是一条来自 OpenDataBuddy 的渠道连通性测试。"})
+			result := a.deliverAlert(channel, M{"event": "test", "subject": "渠道测试", "severity": "info", "message": "这是一条来自 DataAgent 的渠道连通性测试。"})
 			status := "sent"
 			if !boolOf(result["ok"]) {
 				status = "failed"
@@ -158,7 +158,7 @@ func (a *App) operationRoutes() []route {
 			if len(notify) == 0 {
 				notify = obj(a.setting("notify." + c.WS))
 			}
-			payload := M{"event": "test", "subject": "通知配置测试", "severity": "info", "message": "这是一条来自 OpenDataBuddy 的通知配置测试。"}
+			payload := M{"event": "test", "subject": "通知配置测试", "severity": "info", "message": "这是一条来自 DataAgent 的通知配置测试。"}
 			results := []any{}
 			ok := true
 			message := ""

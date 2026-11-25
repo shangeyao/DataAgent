@@ -56,7 +56,7 @@ func (a *App) mcpMessage(c *request, msg M) (response M) {
 	params := obj(msg["params"])
 	switch str(msg["method"]) {
 	case "initialize":
-		response["result"] = M{"protocolVersion": "2024-11-05", "capabilities": M{"tools": M{"listChanged": false}}, "serverInfo": M{"name": "opendatabuddy", "version": "0.4.0"}}
+		response["result"] = M{"protocolVersion": "2024-11-05", "capabilities": M{"tools": M{"listChanged": false}}, "serverInfo": M{"name": "dataagent", "version": "0.4.0"}}
 	case "ping":
 		response["result"] = M{}
 	case "tools/list":

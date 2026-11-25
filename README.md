@@ -1,4 +1,4 @@
-# OpenDataBuddy
+# DataAgent
 
 开源数据智能体工作台：用对话完成取数、开发、治理与分析。
 
@@ -9,7 +9,7 @@
 需要 Go 1.24+、启用 CGO 的 C/C++ 编译环境。macOS 可使用 Xcode Command Line Tools；Linux 可使用 GCC。只有执行 Python cell / Python 节点时才需要 Python 3.10+，不需要安装 pip 包。
 
 ```bash
-go run ./cmd/opendatabuddy
+go run ./cmd/dataagent
 # 或
 ./start.sh --port 8000
 ```
@@ -21,10 +21,10 @@ Windows：`start.bat`。打开 <http://127.0.0.1:8000>，默认账号 `admin@loc
 ```bash
 # 构建后运行，不再需要 Go 编译器
 make build
-./bin/opendatabuddy --host 127.0.0.1 --port 8000
+./bin/dataagent --host 127.0.0.1 --port 8000
 
 # 隔离开发数据
-DATABUDDY_DATA_DIR=/tmp/odb-dev go run ./cmd/opendatabuddy --port 8042
+DATABUDDY_DATA_DIR=/tmp/odb-dev go run ./cmd/dataagent --port 8042
 ```
 
 进程退出会停止调度并关闭数据库、Python 内核。`--root` 指定项目根目录；相对 `--data-dir` 相对于该目录解析。运行时需要 `frontend/dist/`（前端构建产物）和可选 Python 内核脚本。
@@ -110,7 +110,7 @@ OCR_API_KEY=your-key
 
 ```bash
 make build
-DATABUDDY_TOKEN='<控制台会话 token>' ./bin/opendatabuddy --mcp
+DATABUDDY_TOKEN='<控制台会话 token>' ./bin/dataagent --mcp
 ```
 
 客户端配置示例（替换为本机绝对路径）：
@@ -118,8 +118,8 @@ DATABUDDY_TOKEN='<控制台会话 token>' ./bin/opendatabuddy --mcp
 ```json
 {
   "mcpServers": {
-    "opendatabuddy": {
-      "command": "/path/to/OpenDataBuddy/bin/opendatabuddy",
+    "dataagent": {
+      "command": "/path/to/DataAgent/bin/dataagent",
       "args": ["--mcp"],
       "env": {
         "DATABUDDY_TOKEN": "your-console-session-token",
@@ -150,7 +150,7 @@ make build
 测试不会使用项目 `data/`。真实模型调用用本地模拟服务验证；真实供应商的密钥、网络和模型表现需要在配置后验证。
 
 ```text
-cmd/opendatabuddy/        Go 程序入口，HTTP / stdio MCP
+cmd/dataagent/        Go 程序入口，HTTP / stdio MCP
 internal/platform/       鉴权、存储、查询及各业务引擎
 internal/platform/assets 表结构、增量迁移、示例数据、元信息和历史契约
 scripts/python_kernel.py 唯一 Python 运行时：执行用户代码，通过回调请求 Go 查询

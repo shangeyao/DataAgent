@@ -10,7 +10,7 @@ func (a *App) modelRoutes() []route {
 		{"POST", "/api/settings/embedding/test", false, true, func(c *request) any {
 			c.admin()
 			conf := a.embeddingConf()
-			vecs := a.embedTexts(c.R.Context(), []string{"OpenDataBuddy 语义检索测试", "semantic search test"})
+			vecs := a.embedTexts(c.R.Context(), []string{"DataAgent 语义检索测试", "semantic search test"})
 			if len(vecs) == 0 {
 				fail(422, "Embedding 服务未配置")
 			}

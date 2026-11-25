@@ -17,8 +17,8 @@ node_modules/
 .vscode/
 
 /bin/
-/opendatabuddy
-/opendatabuddy.exe
+/dataagent
+/dataagent.exe
 
 # 本机启动脚本（不入库）
 /start-lan.ps1

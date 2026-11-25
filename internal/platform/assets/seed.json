@@ -3,7 +3,7 @@
   {
    "id": "1629dee48cc4e531",
    "name": "半导体数仓智能",
-   "description": "OpenDataBuddy 示例工作空间，内置晶圆产出数仓数据集（Doris 语义对齐）",
+   "description": "DataAgent 示例工作空间，内置晶圆产出数仓数据集（Doris 语义对齐）",
    "owner_id": "72122ce96bfec66e",
    "created_at": "2026-11-10T12:28:02+08:00"
   }

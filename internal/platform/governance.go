@@ -492,7 +492,7 @@ func (a *App) ops(ws, path string) M {
 	}
 	w := a.owned("workspaces", ws, ws)
 	workspace := M{"id": ws, "level": "workspace", "name": w["name"], "health": health(rr), "metrics": M{"tables": len(a.tables(ws)), "flows": len(flows), "runs": len(rr)}, "children": resources}
-	root := M{"id": "platform", "level": "platform", "name": "OpenDataBuddy", "health": health(rr), "metrics": workspace["metrics"], "children": []M{workspace}}
+	root := M{"id": "platform", "level": "platform", "name": "DataAgent", "health": health(rr), "metrics": workspace["metrics"], "children": []M{workspace}}
 	flat = append(flat, workspace, root)
 	out := M{"root": root, "tree": root, "nodes": flat, "levels": []M{{"key": "platform", "label": "平台层"}, {"key": "workspace", "label": "工作空间层"}, {"key": "resource", "label": "资源层"}, {"key": "task", "label": "任务层"}}, "health": health(rr), "summary": workspace["metrics"], "recent_runs": rr, "findings": findings, "issues": findings, "diagnosis": findings, "generated_at": time.Now().UTC().Format(time.RFC3339)}
 

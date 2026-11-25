@@ -154,7 +154,7 @@ node --check web/js/<每个文件>.js
 ## 启动与数据
 
 ```bash
-DATABUDDY_DATA_DIR=/tmp/odb-dev go run ./cmd/opendatabuddy --port 8042
+DATABUDDY_DATA_DIR=/tmp/odb-dev go run ./cmd/dataagent --port 8042
 ```
 
 打开 `http://127.0.0.1:8042`，默认 `admin@local` / `admin123`。迁移现有数据前先停止旧服务；SQLite 增量补列，原数据目录布局保留。不要让两个服务进程同时打开同一 DuckDB 文件。

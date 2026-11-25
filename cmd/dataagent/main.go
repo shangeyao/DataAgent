@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/shangeyao/OpenDataBuddy/internal/platform"
+	"github.com/shangeyao/DataAgent/internal/platform"
 	"net"
 	"os"
 	"os/signal"
@@ -49,7 +49,7 @@ func main() {
 	defer stopScheduler()
 	s := a.Server(net.JoinHostPort(*host, *port))
 	check(s.Start())
-	fmt.Printf("OpenDataBuddy · GoFrame v2.10.4\nhttp://%s\n数据目录 %s\n", net.JoinHostPort(*host, *port), d)
+	fmt.Printf("DataAgent · GoFrame v2.10.4\nhttp://%s\n数据目录 %s\n", net.JoinHostPort(*host, *port), d)
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch

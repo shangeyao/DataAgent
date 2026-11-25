@@ -1,4 +1,4 @@
-module github.com/shangeyao/OpenDataBuddy
+module github.com/shangeyao/DataAgent
 
 go 1.24.0
 

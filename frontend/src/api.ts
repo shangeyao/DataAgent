@@ -1,4 +1,4 @@
-// OpenDataBuddy API 封装（Bearer token）+ 会话与格式化工具
+// DataAgent API 封装（Bearer token）+ 会话与格式化工具
 const TOKEN_KEY = 'odb.token'
 const WS_KEY = 'odb.workspace'
 
